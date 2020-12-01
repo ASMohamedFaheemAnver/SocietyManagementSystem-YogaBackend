@@ -1,0 +1,7 @@
+{
+  "env": {
+    "mongodb_url": "",
+    "mongodb_urld": "",
+    "secret_word": ""
+  }
+}
