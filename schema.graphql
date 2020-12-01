@@ -1,16 +1,104 @@
-type User {
-  id: String!
+type Message {
+  message: String!
+}
+
+type AuthData {
+  token: String!
+  _id: String!
+  expiresIn: Int!
+}
+
+type Society {
+  _id: ID!
   name: String!
   email: String!
-  age: Int!
+  imageUrl: String!
+  address: String!
+  phoneNumber: String!
+  regNo: String!
+  approved: Boolean!
+  month_fee: MonthlyFee!
+  expected_income: Int!
+  current_income: Int!
+  number_of_members: Int!
+}
+
+type Track {
+  is_paid: Boolean!
+  _id: String!
+  member: Member!
+}
+
+type Fee {
+  _id: ID!
+  amount: Int!
+  date: String!
+  description: String!
+  tracks: [Track!]!
+}
+
+type SocietyLog {
+  _id: ID!
+  kind: String!
+  fee: Fee
+}
+
+type SocietyLogInfo {
+  logs: [SocietyLog!]!
+  logs_count: Int!
+}
+
+type MonthlyFee {
+  _id: ID
+  description: String!
+  amount: Int!
+}
+
+input MemberInputData {
+  email: String!
+  name: String!
+  password: String!
+  imageUrl: String!
+  address: String!
+  societyId: String!
+  phoneNumber: String!
+}
+
+type Member {
+  _id: ID!
+  name: String!
+  email: String!
+  imageUrl: String!
+  address: String!
+  arrears: Int!
+  approved: Boolean!
+}
+
+type MemberLog {
+  _id: ID!
+  kind: String!
+  fee: Fee
+}
+
+type BasicSocietyData {
+  _id: ID!
+  name: String!
+}
+
+type MemberLogInfo {
+  logs: [MemberLog!]!
+  logs_count: Int!
 }
 
 type Query {
-  me: User!
+  loginDeveloper(email: String!, password: String!): AuthData!
+  getAllSocieties: [Society!]!
 }
 
-#type Mutation {
-#}
+type Mutation {
+  approveSociety(societyId: String!): Message!
+  disApproveSociety(societyId: String!): Message!
+}
 
 #type Subscription {
 #}
