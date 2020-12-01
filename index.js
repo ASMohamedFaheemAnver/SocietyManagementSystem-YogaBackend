@@ -21,8 +21,8 @@ const server = new GraphQLServer({
     Mutation,
     // Subscription,
   },
-  context: {
-    pubSub,
+  context(request) {
+    return { pubSub, request };
   },
 });
 

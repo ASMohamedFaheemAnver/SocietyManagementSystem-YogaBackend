@@ -1,7 +1,10 @@
 const Developer = require("../model/developer");
+const Society = require("../model/society");
 const validator = require("validator");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+
+import getUserData from "../middleware/auth";
 
 const Query = {
   loginDeveloper: async (parent, { email, password }, ctx, info) => {
@@ -52,6 +55,23 @@ const Query = {
       _id: developer._id.toString(),
       expiresIn: 36000,
     };
+  },
+
+  getAllSocieties: async (parent, args, { request }, info) => {
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+    if (userData.category !== "developer") {
+      const error = new Error("only developer can approve societies!");
+      error.code = 401;
+      throw error;
+    }
+    const societies = await Society.find();
+    return societies;
   },
 };
 
