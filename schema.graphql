@@ -1,0 +1,16 @@
+type User {
+  id: String!
+  name: String!
+  email: String!
+  age: Int!
+}
+
+type Query {
+  me: User!
+}
+
+#type Mutation {
+#}
+
+#type Subscription {
+#}
