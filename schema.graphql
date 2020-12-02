@@ -70,7 +70,7 @@ input MemberInputData {
   email: String!
   name: String!
   password: String!
-  imageUrl: String!
+  image: Upload!
   address: String!
   societyId: String!
   phoneNumber: String!
@@ -112,6 +112,7 @@ type Mutation {
   approveSociety(societyId: String!): Message!
   disApproveSociety(societyId: String!): Message!
   createSociety(societyInput: SocietyInputData!): Society!
+  createMember(memberInput: MemberInputData!): Member!
 }
 
 #type Subscription {
