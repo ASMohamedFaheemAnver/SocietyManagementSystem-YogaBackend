@@ -58,6 +58,8 @@ const Query = {
   },
 
   getAllSocieties: async (parent, args, { request }, info) => {
+    console.log({ emitted: "getAllSocieties" });
+
     const userData = getUserData(request);
 
     if (!userData) {
@@ -70,6 +72,11 @@ const Query = {
       error.code = 401;
       throw error;
     }
+    const societies = await Society.find();
+    return societies;
+  },
+
+  getBasicSocietyDetailes: async () => {
     const societies = await Society.find();
     return societies;
   },

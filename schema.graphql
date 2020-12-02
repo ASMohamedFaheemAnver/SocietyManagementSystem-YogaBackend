@@ -1,3 +1,5 @@
+scalar Upload
+
 type Message {
   message: String!
 }
@@ -54,6 +56,16 @@ type MonthlyFee {
   amount: Int!
 }
 
+input SocietyInputData {
+  email: String!
+  name: String!
+  password: String!
+  address: String!
+  phoneNumber: String!
+  regNo: String!
+  image: Upload!
+}
+
 input MemberInputData {
   email: String!
   name: String!
@@ -93,11 +105,13 @@ type MemberLogInfo {
 type Query {
   loginDeveloper(email: String!, password: String!): AuthData!
   getAllSocieties: [Society!]!
+  getBasicSocietyDetailes: [BasicSocietyData!]!
 }
 
 type Mutation {
   approveSociety(societyId: String!): Message!
   disApproveSociety(societyId: String!): Message!
+  createSociety(societyInput: SocietyInputData!): Society!
 }
 
 #type Subscription {

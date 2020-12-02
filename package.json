@@ -17,6 +17,7 @@
     "graphql-yoga": "^1.18.3",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.11.0",
+    "uuid-v4": "^0.1.0",
     "validator": "^13.5.1"
   },
   "devDependencies": {
