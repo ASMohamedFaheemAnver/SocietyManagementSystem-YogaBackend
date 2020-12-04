@@ -121,6 +121,8 @@ type Mutation {
   addExtraFeeToEveryone(extraFee: Int!, description: String!): SocietyLog!
   makeFeePaidForOneMember(track_id: ID!, log_id: ID!): Message!
   makeFeeUnPaidForOneMember(track_id: ID!, log_id: ID!): Message!
+  approveMember(memberId: String!): Message!
+  disApproveMember(memberId: String!): Message!
 }
 
 #type Subscription {

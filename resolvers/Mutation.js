@@ -473,6 +473,65 @@ const Mutation = {
 
     return { message: "member paid the ammount!" };
   },
+
+  approveMember: async (parent, { memberId }, { request }, info) => {
+    console.log({ emitted: "approveMember" });
+
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (userData.category !== "society") {
+      const error = new Error("only society can approve it's member!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (!memberId) {
+      const error = new Error("invalid society id!");
+      error.code = 403;
+      throw error;
+    }
+    await Member.updateOne(
+      { _id: memberId, society: userData.encryptedId },
+      { $set: { approved: true } }
+    );
+    return { message: "approved successfly!" };
+  },
+
+  disApproveMember: async (parent, { memberId }, { request }, info) => {
+    console.log({ emitted: "disApproveMember" });
+
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (userData.category !== "society") {
+      const error = new Error("only society can disapprove it's member!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (!memberId) {
+      const error = new Error("invalid society id!");
+      error.code = 403;
+      throw error;
+    }
+    await Member.updateOne(
+      { _id: memberId, society: userData.encryptedId },
+      { $set: { approved: false } }
+    );
+    return { message: "disapproved successfly!" };
+  },
+
 };
 
 export { Mutation as default };
