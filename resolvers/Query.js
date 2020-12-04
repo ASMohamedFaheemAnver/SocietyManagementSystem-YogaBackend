@@ -10,6 +10,8 @@ const Log = require("../model/log");
 const MonthFee = require("../model/month-fee");
 const ExtraFee = require("../model/extra-fee");
 const Track = require("../model/track");
+const Member = require("../model/member");
+
 
 const Query = {
   loginDeveloper: async (parent, { email, password }, ctx, info) => {
@@ -229,6 +231,128 @@ const Query = {
     }
     const society = await Society.findById(userData.encryptedId).populate("members");
     return society.members;
+  },
+
+  loginMember: async (parent, { email, password }, { request }, info) => {
+    console.log({ emitted: "loginMember" });
+
+    const errors = [];
+
+    if (!validator.isEmail(email)) {
+      errors.push({ message: "email is invalid!" });
+    }
+
+    if (password.length < 8) {
+      errors.push({
+        message: "password should be more than or equal to 8 charactors!",
+      });
+    }
+
+    if (errors.length > 0) {
+      const error = new Error("invalid credentials!");
+      error.data = errors;
+      error.code = 422;
+      throw error;
+    }
+
+    console.log({ email: email, password: password });
+    let member = await Member.findOne({ email: email });
+
+    if (!member) {
+      const error = new Error("member doesn't exist!");
+      error.code = 401;
+      throw error;
+    }
+    // console.log(member.approved);
+    if (!member.approved) {
+      const error = new Error("member doesn't approved yet!");
+      error.code = 401;
+      throw error;
+    }
+
+    const isEqual = await bcrypt.compare(password, member.password);
+
+    if (!isEqual) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    const token = jwt.sign(
+      { encryptedId: member._id.toString(), category: "member" },
+      process.env.secret_word,
+      { expiresIn: "10h" }
+    );
+    return { token: token, _id: member._id.toString(), expiresIn: 36000 };
+  },
+
+  getMember: async (parent, args, { request }, info) => {
+
+    console.log({ emitted: "getMember" });
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (userData.category !== "member") {
+      const error = new Error("only developer can approve societies!");
+      error.code = 401;
+      throw error;
+    }
+
+    const member = await Member.findById(userData.encryptedId);
+    return member._doc;
+  },
+
+  getMemberLogs: async (parent, { page_number, page_size }, { request }, info) => {
+    console.log({ emitted: "getMemberLogs" });
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (userData.category !== "member") {
+      const error = new Error("only member can see his logs!");
+      error.code = 401;
+      throw error;
+    }
+
+    const member = await Member.findById(userData.encryptedId).populate([
+      {
+        path: "logs",
+        options: {
+          skip: page_number * page_size,
+          limit: page_size,
+          sort: {
+            _id: -1,
+          },
+        },
+        populate: {
+          path: "item",
+        },
+      },
+    ]);
+
+    let logs_count = member.logs.length;
+
+    // console.log(society);
+
+    member.logs.map((log) => {
+      if (log.kind === "MonthFee" || log.kind === "ExtraFee") {
+        log.fee = log.item;
+      }
+
+      return log;
+    });
+
+
+    return { logs: member.logs, logs_count: logs_count };
   },
 };
 
