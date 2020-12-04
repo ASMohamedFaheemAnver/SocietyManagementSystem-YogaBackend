@@ -532,6 +532,67 @@ const Mutation = {
     return { message: "disapproved successfly!" };
   },
 
+  editFeeForEveryone: async (parent, { log_id, fee, description }, { request }, info) => {
+    console.log({ emitted: "getAllSocietyMembers" });
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (userData.category !== "society") {
+      const error = new Error("only society can edit payments!");
+      error.code = 401;
+      throw error;
+    }
+
+    const society = await Society.findById(userData.encryptedId);
+
+    const log = await Log.findById(log_id).populate([
+      {
+        path: "item",
+
+        populate: {
+          path: "tracks",
+          populate: {
+            path: "member",
+          },
+        },
+      },
+    ]);
+
+    for (let i = 0; i < log.item.tracks.length; i++) {
+      let track = log.item.tracks[i];
+
+      if (track.is_paid) {
+        let member = track.member;
+        track.is_paid = false;
+        await track.save();
+        member.arrears += fee;
+        await member.save();
+        society.expected_income += fee;
+        society.expected_income -= log.item.amount;
+        society.current_income -= log.item.amount;
+        await society.save();
+      } else {
+        let member = track.member;
+        member.arrears -= log.item.amount;
+        member.arrears += fee;
+
+        await member.save();
+        society.expected_income += fee;
+        society.expected_income -= log.item.amount;
+        await society.save();
+      }
+    }
+    log.item.amount = fee;
+    log.item.description = description;
+    await log.item.save();
+    log.fee = log.item;
+    return log;
+  },
 };
 
 export { Mutation as default };

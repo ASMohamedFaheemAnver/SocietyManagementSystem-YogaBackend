@@ -113,6 +113,7 @@ type Query {
   loginMember(email: String!, password: String!): AuthData!
   getMember: Member!
   getMemberLogs(page_number: Int!, page_size: Int!): MemberLogInfo!
+  getAllSocietyMembers: [Member!]!
 }
 
 type Mutation {
@@ -126,6 +127,7 @@ type Mutation {
   makeFeeUnPaidForOneMember(track_id: ID!, log_id: ID!): Message!
   approveMember(memberId: String!): Message!
   disApproveMember(memberId: String!): Message!
+  editFeeForEveryone(log_id: ID!, fee: Int!, description: String!): SocietyLog!
 }
 
 #type Subscription {

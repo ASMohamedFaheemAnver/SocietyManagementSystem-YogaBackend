@@ -354,6 +354,31 @@ const Query = {
 
     return { logs: member.logs, logs_count: logs_count };
   },
+
+  getAllSocietyMembers: async (parent, args, { request }, info) => {
+    console.log({ emitted: "getAllSocietyMembers" });
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+    if (userData.category !== "member") {
+      const error = new Error("you are not a member!");
+      error.code = 401;
+      throw error;
+    }
+
+    const member = await Member.findById(userData.encryptedId).populate("society");
+    const members = [];
+    for (let i = 0; i < member.society.members.length; i++) {
+      members.push(await Member.findById(member.society.members[i]));
+    }
+    return members;
+  },
+
+
 };
 
 export { Query as default };
