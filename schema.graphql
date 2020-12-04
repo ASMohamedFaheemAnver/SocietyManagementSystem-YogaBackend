@@ -106,6 +106,7 @@ type Query {
   loginDeveloper(email: String!, password: String!): AuthData!
   getAllSocieties: [Society!]!
   getBasicSocietyDetailes: [BasicSocietyData!]!
+  loginSociety(email: String!, password: String!): AuthData!
 }
 
 type Mutation {
