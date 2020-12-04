@@ -211,6 +211,25 @@ const Query = {
 
     return { logs: society.logs, logs_count: logs_count };
   },
+
+  getAllMembers: async (parent, args, { request }, info) => {
+
+    console.log({ emitted: "getSocietyLogs" });
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+    if (userData.category !== "society") {
+      const error = new Error("only society can view it's members!");
+      error.code = 401;
+      throw error;
+    }
+    const society = await Society.findById(userData.encryptedId).populate("members");
+    return society.members;
+  },
 };
 
 export { Query as default };

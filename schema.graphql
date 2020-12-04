@@ -109,6 +109,7 @@ type Query {
   loginSociety(email: String!, password: String!): AuthData!
   getSociety: Society!
   getSocietyLogs(page_number: Int!, page_size: Int!): SocietyLogInfo!
+  getAllMembers: [Member!]!
 }
 
 type Mutation {
