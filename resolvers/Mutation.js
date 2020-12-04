@@ -379,6 +379,100 @@ const Mutation = {
     log.fee = log.item;
     return log;
   },
+
+  makeFeePaidForOneMember: async (parent, { track_id, log_id }, { request }, info) => {
+    console.log({ emitted: "makeFeePaidForOneMember" });
+
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (userData.category !== "society") {
+      const error = new Error("only society can edit payments!");
+      error.code = 401;
+      throw error;
+    }
+
+    const track = await Track.findById(track_id).populate();
+
+    const member = await Member.findById(track.member);
+
+    const society = await Society.findById(member.society);
+
+    if (track.is_paid) {
+      const error = new Error("this member already paid the ammount!");
+      error.code = 401;
+      throw error;
+    }
+
+    const log = await Log.findById(log_id).populate("item");
+    society.current_income += log.item.amount;
+    member.arrears -= log.item.amount;
+    await society.save();
+    await member.save();
+
+    if (society._id.toString() !== userData.encryptedId) {
+      const error = new Error("society only can edit it's own member!");
+      error.code = 401;
+      throw error;
+    }
+
+    track.is_paid = true;
+    await track.save();
+
+    return { message: "member paid the ammount!" };
+  },
+
+  makeFeeUnPaidForOneMember: async (parent, { track_id, log_id }, { request }, info) => {
+    console.log({ emitted: "makeFeeUnPaidForOneMember" });
+
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (userData.category !== "society") {
+      const error = new Error("only society can edit payments!");
+      error.code = 401;
+      throw error;
+    }
+
+    const track = await Track.findById(track_id).populate("member");
+
+    const member = await Member.findById(track.member);
+
+    const society = await Society.findById(member.society);
+
+    if (!track.is_paid) {
+      const error = new Error("this member already not paid the ammount!");
+      error.code = 401;
+      throw error;
+    }
+
+    const log = await Log.findById(log_id).populate("item");
+    society.current_income -= log.item.amount;
+    member.arrears += log.item.amount;
+    await society.save();
+    await member.save();
+
+    if (society._id.toString() !== userData.encryptedId) {
+      const error = new Error("society only can edit it's own member!");
+      error.code = 401;
+      throw error;
+    }
+
+    track.is_paid = false;
+    await track.save();
+
+    return { message: "member paid the ammount!" };
+  },
 };
 
 export { Mutation as default };

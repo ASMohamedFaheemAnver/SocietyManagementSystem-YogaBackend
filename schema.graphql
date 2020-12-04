@@ -119,6 +119,8 @@ type Mutation {
   createMember(memberInput: MemberInputData!): Member!
   addMonthlyFeeToEveryone(monthlyFee: Int!, description: String!): SocietyLog!
   addExtraFeeToEveryone(extraFee: Int!, description: String!): SocietyLog!
+  makeFeePaidForOneMember(track_id: ID!, log_id: ID!): Message!
+  makeFeeUnPaidForOneMember(track_id: ID!, log_id: ID!): Message!
 }
 
 #type Subscription {
