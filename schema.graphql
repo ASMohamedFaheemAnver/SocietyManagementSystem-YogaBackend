@@ -107,6 +107,8 @@ type Query {
   getAllSocieties: [Society!]!
   getBasicSocietyDetailes: [BasicSocietyData!]!
   loginSociety(email: String!, password: String!): AuthData!
+  getSociety: Society!
+  getSocietyLogs(page_number: Int!, page_size: Int!): SocietyLogInfo!
 }
 
 type Mutation {

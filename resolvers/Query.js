@@ -1,10 +1,15 @@
-const Developer = require("../model/developer");
-const Society = require("../model/society");
 const validator = require("validator");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 import getUserData from "../middleware/auth";
+
+const Developer = require("../model/developer");
+const Society = require("../model/society");
+const Log = require("../model/log");
+const MonthFee = require("../model/month-fee");
+const ExtraFee = require("../model/extra-fee");
+const Track = require("../model/track");
 
 const Query = {
   loginDeveloper: async (parent, { email, password }, ctx, info) => {
@@ -77,11 +82,13 @@ const Query = {
   },
 
   getBasicSocietyDetailes: async () => {
+    console.log({ emitted: "getBasicSocietyDetailes" });
+
     const societies = await Society.find();
     return societies;
   },
   loginSociety: async (parent, { email, password }, { request }, info) => {
-    console.log({ email: email, password: password });
+    console.log({ emitted: "loginSociety" });
 
     const errors = [];
 
@@ -130,6 +137,79 @@ const Query = {
     );
 
     return { token: token, _id: society._id.toString(), expiresIn: 36000 };
+  },
+
+  getSociety: async (parent, args, { request }, info) => {
+    console.log({ emitted: "getSociety" });
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+    if (userData.category !== "society") {
+      const error = new Error("only developer can delete societies!");
+      error.code = 401;
+      throw error;
+    }
+    const society = await Society.findById(userData.encryptedId);
+    return society;
+  },
+
+  getSocietyLogs: async (parent, { page_number, page_size }, { request }, info) => {
+    console.log({ emitted: "getSocietyLogs" });
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (userData.category !== "society") {
+      const error = new Error("only society can add fee to it's members!");
+      error.code = 401;
+      throw error;
+    }
+
+    let logs_count = await Society.findById(userData.encryptedId);
+    logs_count = logs_count.logs.length;
+    const society = await Society.findById(userData.encryptedId).populate([
+      {
+        path: "logs",
+        options: {
+          skip: page_number * page_size,
+          limit: page_size,
+          sort: {
+            _id: -1,
+          },
+        },
+        populate: {
+          path: "item",
+          populate: {
+            path: "tracks",
+            populate: {
+              path: "member",
+            },
+          },
+        },
+      },
+    ]);
+
+    // console.log(society);
+
+    society.logs.map((log) => {
+      if (log.kind === "MonthFee" || log.kind === "ExtraFee") {
+        log.fee = log.item;
+      }
+
+      return log;
+    });
+
+    // console.log(society.logs);
+
+    return { logs: society.logs, logs_count: logs_count };
   },
 };
 
