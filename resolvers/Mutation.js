@@ -7,6 +7,9 @@ import getUserData from "../middleware/auth";
 const Society = require("../model/society");
 const Member = require("../model/member");
 const MonthFee = require("../model/month-fee");
+const ExtraFee = require("../model/extra-fee");
+const Log = require("../model/log");
+const Track = require("../model/track");
 
 
 const Mutation = {
@@ -305,6 +308,74 @@ const Mutation = {
 
     // const updatedSociety = await Society.findById(req.decryptedId);
     // console.log(updatedSociety.logs);
+    log.fee = log.item;
+    return log;
+  },
+
+  addExtraFeeToEveryone: async (parent, { extraFee, description }, { request }, info) => {
+
+    console.log({ emitted: "addExtraFeeToEveryone" });
+
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (userData.category !== "society") {
+      const error = new Error("only society can add fee to it's members!");
+      error.code = 401;
+      throw error;
+    }
+
+    const society = await Society.findById(userData.encryptedId).populate("members");
+    // console.log(society);
+    // console.log(society.members);
+
+    if (society.members.length < 1) {
+      const error = new Error("no member exist!");
+      error.code = 403;
+      throw error;
+    }
+
+    if (extraFee < 20) {
+      const error = new Error("extra fee should be more than 20!");
+      error.code = 403;
+      throw error;
+    }
+
+    const extraFeeObj = new ExtraFee({
+      amount: extraFee,
+      date: new Date(),
+      description: description,
+    });
+
+    const log = new Log({ kind: "ExtraFee", item: extraFeeObj });
+    await log.save();
+
+    for (let i = 0; i < society.members.length; i++) {
+      const member = await Member.findById(society.members[i]);
+      member.arrears += extraFee;
+      society.expected_income += extraFee;
+      member.extra_fees.push(extraFeeObj);
+      member.logs.push(log);
+      const track = new Track({
+        member: member,
+      });
+      await track.save();
+      extraFeeObj.tracks.push(track);
+      await member.save();
+    }
+
+    await extraFeeObj.save();
+    society.extra_fees.push(extraFeeObj);
+
+    society.logs.push(log);
+
+    await society.save();
+
     log.fee = log.item;
     return log;
   },
