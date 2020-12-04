@@ -53,9 +53,6 @@ const societySchema = new Schema({
     default: { description: "Monthly fees.", amount: 100 },
   },
   members: [{ type: Schema.Types.ObjectId, ref: "Member" }],
-  fines: [{ type: Schema.Types.ObjectId, ref: "Fine" }],
-  extra_fees: [{ type: Schema.Types.ObjectId, ref: "ExtraFee" }],
-  month_fees: [{ type: Schema.Types.ObjectId, ref: "MonthFee" }],
   logs: [{ type: Schema.Types.ObjectId, ref: "Log" }],
 });
 

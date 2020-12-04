@@ -36,9 +36,6 @@ const memberSchema = new Schema({
     required: true,
   },
   society: { type: Schema.Types.ObjectId, ref: "Society" },
-  fines: [{ type: Schema.Types.ObjectId, ref: "Fine" }],
-  extra_fees: [{ type: Schema.Types.ObjectId, ref: "ExtraFee" }],
-  month_fees: [{ type: Schema.Types.ObjectId, ref: "MonthFee" }],
   logs: [{ type: Schema.Types.ObjectId, ref: "Log" }],
 });
 

@@ -250,9 +250,12 @@ const Mutation = {
       throw error;
     }
 
-    const society = await Society.findById(userData.encryptedId).populate("members");
-    // console.log(society);
+    const society = await Society.findById(userData.encryptedId).populate([{ path: "members" }, { path: "logs", match: { kind: "MonthFee" }, populate: { path: "item" } }]);
+
+    // console.log(society.logs);
     // console.log(society.members);
+
+
 
     if (society.members.length < 1) {
       const error = new Error("no member exist!");
@@ -260,10 +263,10 @@ const Mutation = {
       throw error;
     }
 
-    // Temporary solution
+    // Temporary solution;
     const date = new Date();
-    for (let i = 0; i < society.month_fees.length; i++) {
-      const monthFee = await MonthFee.findById(society.month_fees[i]);
+    for (let i = 0; i < society.logs.length; i++) {
+      const monthFee = society.logs[i].item;
       const month_fee_date = new Date(monthFee.date);
       console.log({ currentDate: date, monthFeeDate: month_fee_date });
       if (
@@ -290,7 +293,6 @@ const Mutation = {
       const member = await Member.findById(society.members[i]);
       member.arrears += monthlyFee;
       society.expected_income += monthlyFee;
-      member.month_fees.push(monthFee);
       member.logs.push(log);
       await member.save();
       const track = new Track({
@@ -301,7 +303,6 @@ const Mutation = {
     }
 
     await monthFee.save();
-    society.month_fees.push(monthFee);
 
     society.logs.push(log);
     await society.save();
@@ -359,7 +360,6 @@ const Mutation = {
       const member = await Member.findById(society.members[i]);
       member.arrears += extraFee;
       society.expected_income += extraFee;
-      member.extra_fees.push(extraFeeObj);
       member.logs.push(log);
       const track = new Track({
         member: member,
@@ -370,7 +370,6 @@ const Mutation = {
     }
 
     await extraFeeObj.save();
-    society.extra_fees.push(extraFeeObj);
 
     society.logs.push(log);
 
@@ -593,6 +592,11 @@ const Mutation = {
     log.fee = log.item;
     return log;
   },
+
+  deleteFeeLog: async (parent, { log_id }, { request }, info) => {
+    console.log({ emitted: "deleteFeeLog" });
+    const userData = getUserData(request);
+  }
 };
 
 export { Mutation as default };
