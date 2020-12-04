@@ -6,6 +6,7 @@ import getUserData from "../middleware/auth";
 
 const Society = require("../model/society");
 const Member = require("../model/member");
+const MonthFee = require("../model/month-fee");
 
 
 const Mutation = {
@@ -220,6 +221,92 @@ const Mutation = {
     existingSociety.number_of_members++;
     await existingSociety.save();
     return createdMember._doc;
+  },
+
+  addMonthlyFeeToEveryone: async (parent, { monthlyFee, description }, { request }, info) => {
+    console.log({ emitted: "addMonthlyFeeToEveryone" });
+
+    const userData = getUserData(request);
+
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (userData.category !== "society") {
+      const error = new Error("only society can add fee to it's members!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (monthlyFee < 20) {
+      const error = new Error("monthly fee should be more than 20!");
+      error.code = 403;
+      throw error;
+    }
+
+    const society = await Society.findById(userData.encryptedId).populate("members");
+    // console.log(society);
+    // console.log(society.members);
+
+    if (society.members.length < 1) {
+      const error = new Error("no member exist!");
+      error.code = 403;
+      throw error;
+    }
+
+    // Temporary solution
+    const date = new Date();
+    for (let i = 0; i < society.month_fees.length; i++) {
+      const monthFee = await MonthFee.findById(society.month_fees[i]);
+      const month_fee_date = new Date(monthFee.date);
+      console.log({ currentDate: date, monthFeeDate: month_fee_date });
+      if (
+        date.getFullYear() === month_fee_date.getFullYear() &&
+        date.getMonth() === month_fee_date.getMonth() &&
+        date.getDate() - month_fee_date.getDate() < 15
+      ) {
+        const error = new Error("You already have added monthly fee!");
+        error.code = 403;
+        throw error;
+      }
+    }
+
+    const monthFee = new MonthFee({
+      amount: monthlyFee,
+      date: new Date(),
+      description: description,
+    });
+
+    const log = new Log({ kind: "MonthFee", item: monthFee });
+    await log.save();
+
+    for (let i = 0; i < society.members.length; i++) {
+      const member = await Member.findById(society.members[i]);
+      member.arrears += monthlyFee;
+      society.expected_income += monthlyFee;
+      member.month_fees.push(monthFee);
+      member.logs.push(log);
+      await member.save();
+      const track = new Track({
+        member: member,
+      });
+      await track.save();
+      monthFee.tracks.push(track);
+    }
+
+    await monthFee.save();
+    society.month_fees.push(monthFee);
+
+    society.logs.push(log);
+    await society.save();
+
+    // const updatedSociety = await Society.findById(req.decryptedId);
+    // console.log(updatedSociety.logs);
+    log.fee = log.item;
+    return log;
   },
 };
 

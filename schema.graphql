@@ -117,6 +117,7 @@ type Mutation {
   disApproveSociety(societyId: String!): Message!
   createSociety(societyInput: SocietyInputData!): Society!
   createMember(memberInput: MemberInputData!): Member!
+  addMonthlyFeeToEveryone(monthlyFee: Int!, description: String!): SocietyLog!
 }
 
 #type Subscription {
