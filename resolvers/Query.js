@@ -216,7 +216,7 @@ const Query = {
 
   getAllMembers: async (parent, args, { request }, info) => {
 
-    console.log({ emitted: "getSocietyLogs" });
+    console.log({ emitted: "getAllMembers" });
     const userData = getUserData(request);
 
     if (!userData) {
@@ -370,12 +370,8 @@ const Query = {
       throw error;
     }
 
-    const member = await Member.findById(userData.encryptedId).populate("society");
-    const members = [];
-    for (let i = 0; i < member.society.members.length; i++) {
-      members.push(await Member.findById(member.society.members[i]));
-    }
-    return members;
+    const member = await Member.findById(userData.encryptedId).populate([{ path: "society", populate: { path: "members", match: { _id: { $ne: userData.encryptedId } } } }]);
+    return member.society.members;
   },
 
 

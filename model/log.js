@@ -7,6 +7,7 @@ const logSchema = new Schema({
     type: String,
     required: true,
   },
+  is_removed: { type: Boolean, default: false },
   item: { type: Schema.Types.ObjectId, refPath: "kind" },
 });
 

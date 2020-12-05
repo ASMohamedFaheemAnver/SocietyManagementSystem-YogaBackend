@@ -290,13 +290,12 @@ const Mutation = {
     await log.save();
 
     for (let i = 0; i < society.members.length; i++) {
-      const member = await Member.findById(society.members[i]);
-      member.arrears += monthlyFee;
+      society.members[i].arrears += monthlyFee;
       society.expected_income += monthlyFee;
-      member.logs.push(log);
-      await member.save();
+      society.members[i].logs.push(log);
+      await society.members[i].save();
       const track = new Track({
-        member: member,
+        member: society.members[i],
       });
       await track.save();
       monthFee.tracks.push(track);
@@ -396,6 +395,13 @@ const Mutation = {
       throw error;
     }
 
+    const log = await Log.findOne({ _id: log_id, is_removed: false }).populate("item");
+    if (!log) {
+      const error = new Error("activity removed!");
+      error.code = 401;
+      throw error;
+    }
+
     const track = await Track.findById(track_id).populate();
 
     const member = await Member.findById(track.member);
@@ -408,7 +414,6 @@ const Mutation = {
       throw error;
     }
 
-    const log = await Log.findById(log_id).populate("item");
     society.current_income += log.item.amount;
     member.arrears -= log.item.amount;
     await society.save();
@@ -443,6 +448,13 @@ const Mutation = {
       throw error;
     }
 
+    const log = await Log.findOne({ _id: log_id, is_removed: false }).populate("item");
+    if (!log) {
+      const error = new Error("activity removed!");
+      error.code = 401;
+      throw error;
+    }
+
     const track = await Track.findById(track_id).populate("member");
 
     const member = await Member.findById(track.member);
@@ -455,7 +467,6 @@ const Mutation = {
       throw error;
     }
 
-    const log = await Log.findById(log_id).populate("item");
     society.current_income -= log.item.amount;
     member.arrears += log.item.amount;
     await society.save();
@@ -547,9 +558,8 @@ const Mutation = {
       throw error;
     }
 
-    const society = await Society.findById(userData.encryptedId);
 
-    const log = await Log.findById(log_id).populate([
+    const log = await Log.findOne({ log_id, is_removed: false }).populate([
       {
         path: "item",
 
@@ -561,6 +571,15 @@ const Mutation = {
         },
       },
     ]);
+
+    const society = await Society.findById(userData.encryptedId);
+
+
+    if (!log) {
+      const error = new Error("activity removed!");
+      error.code = 401;
+      throw error;
+    }
 
     for (let i = 0; i < log.item.tracks.length; i++) {
       let track = log.item.tracks[i];
@@ -596,6 +615,51 @@ const Mutation = {
   deleteFeeLog: async (parent, { log_id }, { request }, info) => {
     console.log({ emitted: "deleteFeeLog" });
     const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (userData.category !== "society") {
+      const error = new Error("only society can edit payments!");
+      error.code = 401;
+      throw error;
+    }
+
+    const society = await Society.findById(userData.encryptedId).populate([{
+      path: "logs", match: { _id: log_id }, populate: { path: "item", populate: { path: "tracks", populate: { path: "member" } } }
+    }]);
+
+
+    if (!society.logs[0]) {
+      const error = new Error("log was already deleted!");
+      error.code = 401;
+      throw error;
+    }
+
+    society.logs[0].item.tracks.forEach(async track => {
+      if (track.is_paid) {
+        society.current_income -= society.logs[0].item.amount;
+      } else {
+        track.member.arrears -= society.logs[0].item.amount;
+      }
+
+      society.expected_income -= society.logs[0].item.amount;
+
+      const updatedMember = track.member;
+      delete updatedMember._id;
+      await Member.findOneAndUpdate({ _id: track.member._id }, { arrears: track.member.arrears, $pull: { logs: log_id } });
+    });
+
+    await Society.findByIdAndUpdate(society._id, {
+      $pull: { logs: log_id }, $push: { removed_logs: log_id }, expected_income: society.expected_income, current_income: society.current_income
+    });
+
+    await Log.findByIdAndUpdate(log_id, { is_removed: true });
+
+    return { message: "log removed!" };
   }
 };
 

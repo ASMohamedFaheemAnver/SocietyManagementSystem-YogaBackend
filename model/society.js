@@ -54,6 +54,7 @@ const societySchema = new Schema({
   },
   members: [{ type: Schema.Types.ObjectId, ref: "Member" }],
   logs: [{ type: Schema.Types.ObjectId, ref: "Log" }],
+  removed_logs: [{ type: Schema.Types.ObjectId, ref: "Log" }],
 });
 
 module.exports = mongoose.model("Society", societySchema);
