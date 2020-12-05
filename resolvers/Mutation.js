@@ -64,7 +64,7 @@ const Mutation = {
   },
 
   createSociety: async (parent, { societyInput }, { request }, info) => {
-    console.log({ emitted: "societyInput" });
+    console.log({ emitted: "createSociety" });
     const errors = [];
     if (!validator.isEmail(societyInput.email)) {
       errors.push({ message: "email is invalid!" });
@@ -252,9 +252,6 @@ const Mutation = {
 
     const society = await Society.findById(userData.encryptedId).populate([{ path: "members" }, { path: "logs", match: { kind: "MonthFee" }, populate: { path: "item" } }]);
 
-    // console.log(society.logs);
-    // console.log(society.members);
-
 
 
     if (society.members.length < 1) {
@@ -268,7 +265,6 @@ const Mutation = {
     for (let i = 0; i < society.logs.length; i++) {
       const monthFee = society.logs[i].item;
       const month_fee_date = new Date(monthFee.date);
-      console.log({ currentDate: date, monthFeeDate: month_fee_date });
       if (
         date.getFullYear() === month_fee_date.getFullYear() &&
         date.getMonth() === month_fee_date.getMonth() &&
@@ -306,13 +302,11 @@ const Mutation = {
     society.logs.push(log);
     await society.save();
 
-    // const updatedSociety = await Society.findById(req.decryptedId);
-    // console.log(updatedSociety.logs);
     log.fee = log.item;
     return log;
   },
 
-  addExtraFeeToEveryone: async (parent, { extraFee, description }, { request }, info) => {
+  addExtraFeeToEveryone: async (parent, { extraFee, description }, { request, pubSub }, info) => {
 
     console.log({ emitted: "addExtraFeeToEveryone" });
 
@@ -331,8 +325,7 @@ const Mutation = {
     }
 
     const society = await Society.findById(userData.encryptedId).populate("members");
-    // console.log(society);
-    // console.log(society.members);
+
 
     if (society.members.length < 1) {
       const error = new Error("no member exist!");
@@ -375,6 +368,9 @@ const Mutation = {
     await society.save();
 
     log.fee = log.item;
+
+    pubSub.publish(`member:log:society(${society._id})`, { listenMemberLog: log });
+
     return log;
   },
 
@@ -543,7 +539,7 @@ const Mutation = {
   },
 
   editFeeForEveryone: async (parent, { log_id, fee, description }, { request }, info) => {
-    console.log({ emitted: "getAllSocietyMembers" });
+    console.log({ emitted: "editFeeForEveryone" });
     const userData = getUserData(request);
 
     if (!userData) {

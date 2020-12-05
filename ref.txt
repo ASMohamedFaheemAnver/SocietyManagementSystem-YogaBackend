@@ -3,3 +3,7 @@
 
 #Multiple populates - mongoosejs
 #https://stackoverflow.com/questions/12821596/multiple-populates-mongoosejs
+
+
+#Subscriptions
+#https://www.apollographql.com/docs/angular/features/subscriptions/

@@ -19,7 +19,7 @@ const server = new GraphQLServer({
   resolvers: {
     Query,
     Mutation,
-    // Subscription,
+    Subscription,
   },
   context(request) {
     return { pubSub, request };
