@@ -3,7 +3,8 @@ import jwt from "jsonwebtoken";
 const getUserData = (request, requireAuth = true) => {
   const header = request.request
     ? request.request.headers.authorization
-    : request.connection.context.Authorization;
+    : request.connection.context.Authorization ||
+    request.connection.variables.Authorization;
 
   // console.log(request.request.headers.authorization);
 
