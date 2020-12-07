@@ -226,7 +226,7 @@ const Mutation = {
     return createdMember._doc;
   },
 
-  addMonthlyFeeToEveryone: async (parent, { monthlyFee, description }, { request }, info) => {
+  addMonthlyFeeToEveryone: async (parent, { monthlyFee, description }, { request, pubSub }, info) => {
     console.log({ emitted: "addMonthlyFeeToEveryone" });
 
     const userData = getUserData(request);
@@ -303,6 +303,9 @@ const Mutation = {
     await society.save();
 
     log.fee = log.item;
+
+    pubSub.publish(`member:log:society(${society._id})`, { listenMemberLog: { log: log, type: "POST" } });
+
     return log;
   },
 
@@ -369,7 +372,8 @@ const Mutation = {
 
     log.fee = log.item;
 
-    pubSub.publish(`member:log:society(${society._id})`, { listenMemberLog: log });
+    // Emitting event to all observers but If we need to filter it, we can use `member(${member._id})`
+    pubSub.publish(`member:log:society(${society._id})`, { listenMemberLog: { log: log, type: "POST" } });
 
     return log;
   },
@@ -538,7 +542,7 @@ const Mutation = {
     return { message: "disapproved successfly!" };
   },
 
-  editFeeForEveryone: async (parent, { log_id, fee, description }, { request }, info) => {
+  editFeeForEveryone: async (parent, { log_id, fee, description }, { request, pubSub }, info) => {
     console.log({ emitted: "editFeeForEveryone" });
     const userData = getUserData(request);
 
@@ -554,8 +558,7 @@ const Mutation = {
       throw error;
     }
 
-
-    const log = await Log.findOne({ log_id, is_removed: false }).populate([
+    const log = await Log.findOne({ _id: log_id, is_removed: false }).populate([
       {
         path: "item",
 
@@ -605,10 +608,13 @@ const Mutation = {
     log.item.description = description;
     await log.item.save();
     log.fee = log.item;
+
+    pubSub.publish(`member:log:society(${society._id})`, { listenMemberLog: { log: log, type: "PUT" } });
+
     return log;
   },
 
-  deleteFeeLog: async (parent, { log_id }, { request }, info) => {
+  deleteFeeLog: async (parent, { log_id }, { request, pubSub }, info) => {
     console.log({ emitted: "deleteFeeLog" });
     const userData = getUserData(request);
 
@@ -654,6 +660,8 @@ const Mutation = {
     });
 
     await Log.findByIdAndUpdate(log_id, { is_removed: true });
+
+    pubSub.publish(`member:log:society(${society._id})`, { listenMemberLog: { log: society.logs[0], type: "DELETE" } });
 
     return { message: "log removed!" };
   }

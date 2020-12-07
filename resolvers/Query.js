@@ -335,7 +335,8 @@ const Query = {
       },
     ]);
 
-    let logs_count = member.logs.length;
+    let logs_count = await Member.findById(userData.encryptedId);
+    logs_count = logs_count.logs.length;
 
     // console.log(society);
 
