@@ -1,5 +1,4 @@
 /node_modules
 /images
 nodemon.json
-serviceAccountKey.json
 dist
