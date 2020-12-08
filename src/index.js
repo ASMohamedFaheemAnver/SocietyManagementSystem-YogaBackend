@@ -1,3 +1,4 @@
+import "@babel/polyfill/noConflict";
 import { GraphQLServer, PubSub } from "graphql-yoga";
 import Query from "./resolvers/Query";
 import Mutation from "./resolvers/Mutation";
