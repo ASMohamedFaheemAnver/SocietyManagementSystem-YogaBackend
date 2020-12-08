@@ -6,4 +6,4 @@
 
 
 #Subscriptions
-#https://www.apollographql.com/docs/angular/features/subscriptions/
+#https://www.apollographql.com/docs/angular/features/subscriptions
