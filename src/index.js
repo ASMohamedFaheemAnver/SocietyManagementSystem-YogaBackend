@@ -15,7 +15,7 @@ const fs = require("fs");
 const pubSub = new PubSub();
 
 const server = new GraphQLServer({
-  typeDefs: "./schema.graphql",
+  typeDefs: "./src/schema.graphql",
   resolvers: {
     Query,
     Mutation,
