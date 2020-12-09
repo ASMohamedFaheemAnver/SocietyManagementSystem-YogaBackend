@@ -133,6 +133,7 @@ type Mutation {
 
 type Subscription {
   listenMemberLog: logSubscriptionPayload!
+  listenMemberLogTrack: logTrackSubscriptionPayload!
 }
 
 enum MutationType {
@@ -142,6 +143,11 @@ enum MutationType {
 }
 
 type logSubscriptionPayload {
+  log: MemberLog!
+  type: MutationType!
+}
+
+type logTrackSubscriptionPayload {
   log: MemberLog!
   type: MutationType!
 }

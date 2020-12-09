@@ -304,7 +304,7 @@ const Mutation = {
 
     log.fee = log.item;
 
-    pubSub.publish(`member:log:society(${society._id})`, { listenMemberLog: { log: log, type: "POST" } });
+    pubSub.publish(`member:log|society(${society._id})`, { listenMemberLog: { log: log, type: "POST" } });
 
     return log;
   },
@@ -373,12 +373,12 @@ const Mutation = {
     log.fee = log.item;
 
     // Emitting event to all observers but If we need to filter it, we can use `member(${member._id})`
-    pubSub.publish(`member:log:society(${society._id})`, { listenMemberLog: { log: log, type: "POST" } });
+    pubSub.publish(`member:log|society(${society._id})`, { listenMemberLog: { log: log, type: "POST" } });
 
     return log;
   },
 
-  makeFeePaidForOneMember: async (parent, { track_id, log_id }, { request }, info) => {
+  makeFeePaidForOneMember: async (parent, { track_id, log_id }, { request, pubSub }, info) => {
     console.log({ emitted: "makeFeePaidForOneMember" });
 
     const userData = getUserData(request);
@@ -395,7 +395,7 @@ const Mutation = {
       throw error;
     }
 
-    const log = await Log.findOne({ _id: log_id, is_removed: false }).populate("item");
+    const log = await Log.findOne({ _id: log_id, is_removed: false }).populate([{ path: "item", populate: { path: "tracks", match: { _id: track_id } } }]);
     if (!log) {
       const error = new Error("activity removed!");
       error.code = 401;
@@ -428,10 +428,14 @@ const Mutation = {
     track.is_paid = true;
     await track.save();
 
+    log.fee = log.item;
+    log.fee.tracks[0] = track;
+    pubSub.publish(`member:log:track|society(${society._id})&member(${member._id})`, { listenMemberLogTrack: { log: log, type: "PUT" } });
+
     return { message: "member paid the ammount!" };
   },
 
-  makeFeeUnPaidForOneMember: async (parent, { track_id, log_id }, { request }, info) => {
+  makeFeeUnPaidForOneMember: async (parent, { track_id, log_id }, { request, pubSub }, info) => {
     console.log({ emitted: "makeFeeUnPaidForOneMember" });
 
     const userData = getUserData(request);
@@ -448,7 +452,8 @@ const Mutation = {
       throw error;
     }
 
-    const log = await Log.findOne({ _id: log_id, is_removed: false }).populate("item");
+    const log = await Log.findOne({ _id: log_id, is_removed: false }).populate([{ path: "item", populate: { path: "tracks", match: { _id: track_id } } }]);
+
     if (!log) {
       const error = new Error("activity removed!");
       error.code = 401;
@@ -480,6 +485,11 @@ const Mutation = {
 
     track.is_paid = false;
     await track.save();
+
+    log.fee = log.item;
+    log.fee.tracks[0] = track;
+    pubSub.publish(`member:log:track|society(${society._id})&member(${member._id})`, { listenMemberLogTrack: { log: log, type: "PUT" } });
+
 
     return { message: "member paid the ammount!" };
   },
@@ -609,7 +619,7 @@ const Mutation = {
     await log.item.save();
     log.fee = log.item;
 
-    pubSub.publish(`member:log:society(${society._id})`, { listenMemberLog: { log: log, type: "PUT" } });
+    pubSub.publish(`member:log|society(${society._id})`, { listenMemberLog: { log: log, type: "PUT" } });
 
     return log;
   },
@@ -661,7 +671,7 @@ const Mutation = {
 
     await Log.findByIdAndUpdate(log_id, { is_removed: true });
 
-    pubSub.publish(`member:log:society(${society._id})`, { listenMemberLog: { log: society.logs[0], type: "DELETE" } });
+    pubSub.publish(`member:log|society(${society._id})`, { listenMemberLog: { log: society.logs[0], type: "DELETE" } });
 
     return { message: "log removed!" };
   }
