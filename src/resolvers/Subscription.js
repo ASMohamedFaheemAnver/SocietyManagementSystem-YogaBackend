@@ -31,7 +31,23 @@ const Subscription = {
 
       return pubSub.asyncIterator(`member:log:track|society(${member.society})&member(${member._id})`);
     }
-  }
+  },
+
+  listenSocietyMembers: {
+    subscribe: async (parent, args, { request, pubSub }, info) => {
+      console.log({ emitted: "listenSocietyMembers" });
+      const userData = getUserData(request);
+      const member = await Member.findById(userData.encryptedId);
+
+      if (!member) {
+        const error = new Error("member doesn't exist!");
+        error.code = 403;
+        throw error;
+      }
+
+      return pubSub.asyncIterator(`member:members|society(${member.society})`);
+    }
+  },
 };
 
 export { Subscription as default };

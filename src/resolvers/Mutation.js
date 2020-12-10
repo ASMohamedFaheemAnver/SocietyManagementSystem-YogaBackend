@@ -431,6 +431,7 @@ const Mutation = {
     log.fee = log.item;
     log.fee.tracks[0] = track;
     pubSub.publish(`member:log:track|society(${society._id})&member(${member._id})`, { listenMemberLogTrack: { log: log, type: "PUT" } });
+    pubSub.publish(`member:members|society(${society._id})`, { listenSocietyMembers: { member: member, type: "PUT" } });
 
     return { message: "member paid the ammount!" };
   },
@@ -489,7 +490,7 @@ const Mutation = {
     log.fee = log.item;
     log.fee.tracks[0] = track;
     pubSub.publish(`member:log:track|society(${society._id})&member(${member._id})`, { listenMemberLogTrack: { log: log, type: "PUT" } });
-
+    pubSub.publish(`member:members|society(${society._id})`, { listenSocietyMembers: { member: member, type: "PUT" } });
 
     return { message: "member paid the ammount!" };
   },
@@ -581,8 +582,6 @@ const Mutation = {
       },
     ]);
 
-    const society = await Society.findById(userData.encryptedId);
-
 
     if (!log) {
       const error = new Error("activity removed!");
@@ -590,37 +589,42 @@ const Mutation = {
       throw error;
     }
 
-    for (let i = 0; i < log.item.tracks.length; i++) {
-      let track = log.item.tracks[i];
+    let is_fee_mutated = false;
 
-      if (track.is_paid) {
-        let member = track.member;
-        track.is_paid = false;
-        await track.save();
-        member.arrears += fee;
-        await member.save();
-        society.expected_income += fee;
-        society.expected_income -= log.item.amount;
-        society.current_income -= log.item.amount;
-        await society.save();
-      } else {
-        let member = track.member;
-        member.arrears -= log.item.amount;
-        member.arrears += fee;
+    const society = await Society.findById(userData.encryptedId);
+    if (log.item.amount !== fee) {
+      for (let i = 0; i < log.item.tracks.length; i++) {
+        let track = log.item.tracks[i];
 
-        await member.save();
-        society.expected_income += fee;
-        society.expected_income -= log.item.amount;
-        await society.save();
+        if (track.is_paid) {
+          let member = track.member;
+          track.is_paid = false;
+          await track.save();
+          member.arrears += fee;
+          await member.save();
+          society.expected_income += fee;
+          society.expected_income -= log.item.amount;
+          society.current_income -= log.item.amount;
+          await society.save();
+        } else {
+          let member = track.member;
+          member.arrears -= log.item.amount;
+          member.arrears += fee;
+
+          await member.save();
+          society.expected_income += fee;
+          society.expected_income -= log.item.amount;
+          await society.save();
+        }
       }
+      is_fee_mutated = true;
     }
+
     log.item.amount = fee;
     log.item.description = description;
     await log.item.save();
     log.fee = log.item;
-
-    pubSub.publish(`member:log|society(${society._id})`, { listenMemberLog: { log: log, type: "PUT" } });
-
+    pubSub.publish(`member:log|society(${society._id})`, { listenMemberLog: { log: log, type: "PUT", is_fee_mutated: is_fee_mutated } });
     return log;
   },
 
