@@ -331,7 +331,12 @@ const Query = {
         },
         populate: {
           path: "item",
+          populate: {
+            path: "tracks",
+            match: { member: userData.encryptedId }
+          }
         },
+
       },
     ]);
 

@@ -134,6 +134,7 @@ type Mutation {
 type Subscription {
   listenMemberLog: logSubscriptionPayload!
   listenMemberLogTrack: logTrackSubscriptionPayload!
+  listenSocietyMembers: societyMembersSubscriptionPayload!
 }
 
 enum MutationType {
@@ -145,9 +146,15 @@ enum MutationType {
 type logSubscriptionPayload {
   log: MemberLog!
   type: MutationType!
+  is_fee_mutated: Boolean
 }
 
 type logTrackSubscriptionPayload {
   log: MemberLog!
+  type: MutationType!
+}
+
+type societyMembersSubscriptionPayload {
+  member: Member!
   type: MutationType!
 }
