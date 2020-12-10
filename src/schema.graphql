@@ -76,6 +76,12 @@ input MemberInputData {
   phoneNumber: String!
 }
 
+input FineInputData {
+  fine: Int!
+  description: String!
+  member_id: ID!
+}
+
 type Member {
   _id: ID!
   name: String!
@@ -123,6 +129,7 @@ type Mutation {
   createMember(memberInput: MemberInputData!): Member!
   addMonthlyFeeToEveryone(monthlyFee: Int!, description: String!): SocietyLog!
   addExtraFeeToEveryone(extraFee: Int!, description: String!): SocietyLog!
+  addFineForOneMember(fineInput: FineInputData!): Message!
   makeFeePaidForOneMember(track_id: ID!, log_id: ID!): Message!
   makeFeeUnPaidForOneMember(track_id: ID!, log_id: ID!): Message!
   approveMember(memberId: String!): Message!

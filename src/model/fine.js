@@ -15,6 +15,10 @@ const fineSchema = new Schema({
     type: String,
     required: true,
   },
+  tracks: [{
+    type: Schema.Types.ObjectId,
+    ref: "Track",
+  }],
 });
 
 module.exports = mongoose.model("Fine", fineSchema);

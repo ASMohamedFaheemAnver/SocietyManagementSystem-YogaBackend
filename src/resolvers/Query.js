@@ -198,9 +198,7 @@ const Query = {
     // console.log(society);
 
     society.logs.map((log) => {
-      if (log.kind === "MonthFee" || log.kind === "ExtraFee") {
-        log.fee = log.item;
-      }
+      log.fee = log.item;
 
       return log;
     });
@@ -346,11 +344,7 @@ const Query = {
     // console.log(society);
 
     member.logs.map((log) => {
-      if (log.kind === "MonthFee" || log.kind === "ExtraFee") {
-        log.fee = log.item;
-      }
-
-      return log;
+      log.fee = log.item;
     });
 
 
