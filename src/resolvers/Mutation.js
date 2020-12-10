@@ -10,6 +10,7 @@ const MonthFee = require("../model/month-fee");
 const ExtraFee = require("../model/extra-fee");
 const Log = require("../model/log");
 const Track = require("../model/track");
+const Fine = require("../model/fine");
 
 
 const Mutation = {
@@ -678,6 +679,66 @@ const Mutation = {
     pubSub.publish(`member:log|society(${society._id})`, { listenMemberLog: { log: society.logs[0], type: "DELETE" } });
 
     return { message: "log removed!" };
+  },
+
+  addFineForOneMember: async (parent, { fineInput: { fine, description, member_id } }, { pubSub, request }, info) => {
+    console.log({ emitted: "addFineForOneMember", data: { fine, description, member_id } });
+
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (userData.category !== "society") {
+      const error = new Error("only society can edit payments!");
+      error.code = 401;
+      throw error;
+    }
+
+    const society = await Society.findById(userData.encryptedId);
+    if (!society) {
+      const error = new Error("society doesn't exist!");
+      error.code = 403;
+      throw error;
+    }
+
+    const member = await Member.findById(member_id);
+
+    if (member.society.toString() !== society._id.toString()) {
+      const error = new Error("only society can edit payments!");
+      error.code = 401;
+      throw error;
+    }
+
+    const track = new Track({ member: member });
+    track.save();
+
+    const fineObj = new Fine({
+      amount: fine,
+      description: description,
+      date: new Date(),
+      tracks: [track]
+    });
+
+    await fineObj.save();
+
+    const log = new Log({ kind: "Fine", item: fineObj });
+    await log.save();
+
+
+    society.logs.push(log);
+    society.expected_income += fine;
+    await society.save();
+
+    member.logs.push(log);
+    member.arrears += fine;
+    await member.save();
+
+    return { message: "fine added!" };
+
   }
 };
 
