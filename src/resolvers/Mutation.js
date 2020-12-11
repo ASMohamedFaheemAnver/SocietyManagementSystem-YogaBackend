@@ -692,9 +692,8 @@ const Mutation = {
 
       society.expected_income -= society.logs[0].item.amount;
 
-      const updatedMember = track.member;
-      delete updatedMember._id;
-      const member = await Member.findOneAndUpdate({ _id: track.member._id }, { arrears: track.member.arrears, $pull: { logs: log_id } });
+
+      const member = await Member.findOneAndUpdate({ _id: track.member._id }, { arrears: track.member.arrears, $pull: { logs: log_id } }, { new: true });
       pubSub.publish(`member:members|society(${society._id})`, { listenSocietyMembers: { member: member, type: "PUT" } });
     });
 
@@ -704,10 +703,12 @@ const Mutation = {
 
     await Log.findByIdAndUpdate(log_id, { is_removed: true });
 
+
+
     if (society.logs[0].kind !== "Fine") {
       pubSub.publish(`member:log|society(${society._id})`, { listenCommonMemberLog: { log: society.logs[0], type: "DELETE" } });
     } else {
-      pubSub.publish(`member:log:fine|member(${society.logs[0].item.tracks[0].member})`, { listenMemberFineLog: { log: society.logs[0], type: "DELETE" } });
+      pubSub.publish(`member:log:fine|member(${society.logs[0].item.tracks[0].member._id})`, { listenMemberFineLog: { log: society.logs[0], type: "DELETE" } });
     }
 
     return { message: "log removed!" };
