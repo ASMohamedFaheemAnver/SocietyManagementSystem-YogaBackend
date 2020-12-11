@@ -17,6 +17,20 @@ const Subscription = {
     }
   },
 
+  listenMemberFineLog: {
+    subscribe: async (parent, args, { request, pubSub }, info) => {
+      console.log({ emitted: "listenMemberFineLog" });
+      const userData = getUserData(request);
+      const member = await Member.findById(userData.encryptedId);
+      if (!member) {
+        const error = new Error("member doesn't exist!");
+        error.code = 403;
+        throw error;
+      }
+      return pubSub.asyncIterator(`member:log:fine|member(${member._id})`);
+    }
+  },
+
   listenMemberLogTrack: {
     subscribe: async (parent, args, { request, pubSub }, info) => {
       console.log({ emitted: "listenMemberLogTrack" });

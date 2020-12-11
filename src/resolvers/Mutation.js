@@ -737,6 +737,10 @@ const Mutation = {
     member.arrears += fine;
     await member.save();
 
+    log.fee = log.item;
+
+    pubSub.publish(`member:log:fine|member(${member._id})`, { listenMemberFineLog: { log: log, type: "POST", is_fine_mutated: false } });
+
     return { message: "fine added!" };
 
   }
