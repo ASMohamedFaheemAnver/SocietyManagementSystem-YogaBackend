@@ -70,11 +70,21 @@ const Query = {
       error.code = 401;
       throw error;
     }
+
     if (userData.category !== "developer") {
       const error = new Error("only developer can approve societies!");
       error.code = 401;
       throw error;
     }
+
+    const isUserExist = await Developer.exists({ _id: userData.encryptedId });
+
+    if (!isUserExist) {
+      const error = new Error("only developer can approve societies!");
+      error.code = 403;
+      throw error;
+    }
+
     const societies = await Society.find();
     return societies;
   },
@@ -152,6 +162,13 @@ const Query = {
       throw error;
     }
     const society = await Society.findById(userData.encryptedId);
+
+    if (!society) {
+      const error = new Error("society not found!");
+      error.code = 404;
+      throw error;
+    }
+
     return society;
   },
 
@@ -172,6 +189,14 @@ const Query = {
     }
 
     let logs_count = await Society.findById(userData.encryptedId);
+
+    if (!logs_count) {
+      const error = new Error("society not found to get logs!");
+      error.code = 404;
+      throw error;
+    }
+
+
     logs_count = logs_count.logs.length;
     const society = await Society.findById(userData.encryptedId).populate([
       {
@@ -195,15 +220,12 @@ const Query = {
       },
     ]);
 
-    // console.log(society);
 
     society.logs.map((log) => {
       log.fee = log.item;
 
       return log;
     });
-
-    // console.log(society.logs);
 
     return { logs: society.logs, logs_count: logs_count };
   },
@@ -224,6 +246,13 @@ const Query = {
       throw error;
     }
     const society = await Society.findById(userData.encryptedId).populate("members");
+
+    if (!society) {
+      const error = new Error("society not found to get members!");
+      error.code = 404;
+      throw error;
+    }
+
     return society.members;
   },
 
@@ -248,8 +277,6 @@ const Query = {
       error.code = 422;
       throw error;
     }
-
-    console.log({ email: email, password: password });
     let member = await Member.findOne({ email: email });
 
     if (!member) {
@@ -298,6 +325,13 @@ const Query = {
     }
 
     const member = await Member.findById(userData.encryptedId);
+
+    if (!member) {
+      const error = new Error("member not found!");
+      error.code = 404;
+      throw error;
+    }
+
     return member._doc;
   },
 
@@ -338,6 +372,12 @@ const Query = {
       },
     ]);
 
+    if (!member) {
+      const error = new Error("member not found!");
+      error.code = 404;
+      throw error;
+    }
+
     let logs_count = await Member.findById(userData.encryptedId);
     logs_count = logs_count.logs.length;
 
@@ -367,6 +407,13 @@ const Query = {
     }
 
     const member = await Member.findById(userData.encryptedId).populate([{ path: "society", populate: { path: "members", match: { _id: { $ne: userData.encryptedId } } } }]);
+
+    if (!member) {
+      const error = new Error("member not found!");
+      error.code = 404;
+      throw error;
+    }
+
     return member.society.members;
   },
 

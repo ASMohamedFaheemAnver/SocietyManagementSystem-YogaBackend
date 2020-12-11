@@ -75,12 +75,6 @@ const Mutation = {
       errors.push({ message: "name is invalid!" });
     }
 
-    const urlRegex = new RegExp(`[images\|images/][^|\/]+`);
-
-    if (!urlRegex.test(societyInput.imageUrl)) {
-      errors.push({ message: "invalid image url!" });
-    }
-
     if (societyInput.address.length < 10) {
       errors.push({ message: "invalid address!" });
     }
@@ -253,6 +247,11 @@ const Mutation = {
 
     const society = await Society.findById(userData.encryptedId).populate([{ path: "members" }, { path: "logs", match: { kind: "MonthFee" }, populate: { path: "item" } }]);
 
+    if (!society) {
+      const error = new Error("society not found to add monthly fee!");
+      error.code = 404;
+      throw error;
+    }
 
 
     if (society.members.length < 1) {
@@ -331,6 +330,11 @@ const Mutation = {
 
     const society = await Society.findById(userData.encryptedId).populate("members");
 
+    if (!society) {
+      const error = new Error("society not found to add extra fee!");
+      error.code = 404;
+      throw error;
+    }
 
     if (society.members.length < 1) {
       const error = new Error("no member exist!");
@@ -398,6 +402,16 @@ const Mutation = {
       throw error;
     }
 
+    const society = await Society.findById(userData.encryptedId);
+
+    //hack
+
+    if (!society) {
+      const error = new Error("society not found to add extra fee!");
+      error.code = 404;
+      throw error;
+    }
+
     const log = await Log.findOne({ _id: log_id, is_removed: false }).populate([{ path: "item", populate: { path: "tracks", match: { _id: track_id } } }]);
     if (!log) {
       const error = new Error("activity removed!");
@@ -408,8 +422,6 @@ const Mutation = {
     const track = await Track.findById(track_id).populate();
 
     const member = await Member.findById(track.member);
-
-    const society = await Society.findById(member.society);
 
     if (track.is_paid) {
       const error = new Error("this member already paid the ammount!");
@@ -456,6 +468,14 @@ const Mutation = {
       throw error;
     }
 
+    const society = await Society.findById(userData.encryptedId);
+
+    if (!society) {
+      const error = new Error("society not found to add extra fee!");
+      error.code = 404;
+      throw error;
+    }
+
     const log = await Log.findOne({ _id: log_id, is_removed: false }).populate([{ path: "item", populate: { path: "tracks", match: { _id: track_id } } }]);
 
     if (!log) {
@@ -468,7 +488,6 @@ const Mutation = {
 
     const member = await Member.findById(track.member);
 
-    const society = await Society.findById(member.society);
 
     if (!track.is_paid) {
       const error = new Error("this member already not paid the ammount!");
