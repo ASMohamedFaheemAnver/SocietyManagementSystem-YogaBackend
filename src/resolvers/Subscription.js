@@ -3,7 +3,7 @@ import getUserData from "../middleware/auth";
 const Member = require("../model/member");
 
 const Subscription = {
-  listenMemberLog: {
+  listenCommonMemberLog: {
     subscribe: async (parent, args, { request, pubSub }, info) => {
       console.log({ emitted: "listenMemberLog" });
       const userData = getUserData(request);
