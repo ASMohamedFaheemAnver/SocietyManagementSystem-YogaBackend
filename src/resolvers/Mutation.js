@@ -305,8 +305,7 @@ const Mutation = {
 
     log.fee = log.item;
 
-    pubSub.publish(`member:log|society(${society._id})`, { listenMemberLog: { log: log, type: "POST" } });
-
+    pubSub.publish(`member:log|society(${society._id})`, { listenCommonMemberLog: { log: log, type: "POST" } });
     return log;
   },
 
@@ -374,7 +373,7 @@ const Mutation = {
     log.fee = log.item;
 
     // Emitting event to all observers but If we need to filter it, we can use `member(${member._id})`
-    pubSub.publish(`member:log|society(${society._id})`, { listenMemberLog: { log: log, type: "POST" } });
+    pubSub.publish(`member:log|society(${society._id})`, { listenCommonMemberLog: { log: log, type: "POST" } });
 
     return log;
   },
@@ -625,7 +624,11 @@ const Mutation = {
     log.item.description = description;
     await log.item.save();
     log.fee = log.item;
-    pubSub.publish(`member:log|society(${society._id})`, { listenMemberLog: { log: log, type: "PUT", is_fee_mutated: is_fee_mutated } });
+    if (log.kind !== "Fine") {
+      pubSub.publish(`member:log|society(${society._id})`, { listenCommonMemberLog: { log: log, type: "PUT", is_fee_mutated: is_fee_mutated } });
+    } else {
+      pubSub.publish(`member:log:fine|member(${member._id})`, { listenMemberFineLog: { log: log, type: "PUT", is_fee_mutated: is_fee_mutated } });
+    }
     return log;
   },
 
@@ -676,7 +679,11 @@ const Mutation = {
 
     await Log.findByIdAndUpdate(log_id, { is_removed: true });
 
-    pubSub.publish(`member:log|society(${society._id})`, { listenMemberLog: { log: society.logs[0], type: "DELETE" } });
+    if (log.kind !== "Fine") {
+      pubSub.publish(`member:log|society(${society._id})`, { listenCommonMemberLog: { log: society.logs[0], type: "DELETE" } });
+    } else {
+      pubSub.publish(`member:log:fine|member(${member._id})`, { listenMemberFineLog: { log: society.logs[0], type: "DELETE" } });
+    }
 
     return { message: "log removed!" };
   },
@@ -739,7 +746,7 @@ const Mutation = {
 
     log.fee = log.item;
 
-    pubSub.publish(`member:log:fine|member(${member._id})`, { listenMemberFineLog: { log: log, type: "POST", is_fine_mutated: false } });
+    pubSub.publish(`member:log:fine|member(${member._id})`, { listenMemberFineLog: { log: log, type: "POST" } });
 
     return { message: "fine added!" };
 
