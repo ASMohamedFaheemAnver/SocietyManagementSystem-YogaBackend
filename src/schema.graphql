@@ -142,6 +142,7 @@ type Subscription {
   listenCommonMemberLog: logSubscriptionPayload!
   listenMemberLogTrack: logTrackSubscriptionPayload!
   listenSocietyMembers: societyMembersSubscriptionPayload!
+  listenNewSocietyMembers: societyMembersSubscriptionPayload!
   listenMemberFineLog: fineLogSubscriptionPayload!
 }
 

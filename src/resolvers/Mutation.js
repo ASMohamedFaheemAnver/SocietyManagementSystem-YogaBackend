@@ -146,7 +146,7 @@ const Mutation = {
 
   },
 
-  createMember: async (parent, { memberInput }, { request }, info) => {
+  createMember: async (parent, { memberInput }, { request, pubSub }, info) => {
     console.log({ emitted: "createMember" });
 
     const errors = [];
@@ -218,6 +218,9 @@ const Mutation = {
     existingSociety.members.push(createdMember);
     existingSociety.number_of_members++;
     await existingSociety.save();
+
+    pubSub.publish(`society:members|society(${existingSociety._id})`, { listenNewSocietyMembers: { member: createdMember, type: "POST" } });
+
     return createdMember._doc;
   },
 
