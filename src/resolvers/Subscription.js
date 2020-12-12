@@ -1,6 +1,7 @@
 import getUserData from "../middleware/auth";
 
 const Member = require("../model/member");
+const Society = require("../model/society");
 
 const Subscription = {
   listenCommonMemberLog: {
@@ -60,6 +61,22 @@ const Subscription = {
       }
 
       return pubSub.asyncIterator(`member:members|society(${member.society})`);
+    }
+  },
+
+  listenNewSocietyMembers: {
+    subscribe: async (parent, args, { request, pubSub }, info) => {
+      console.log({ emitted: "listenNewSocietyMembers" });
+      const userData = getUserData(request);
+      const society = await Society.findById(userData.encryptedId);
+
+      if (!society) {
+        const error = new Error("society doesn't exist!");
+        error.code = 403;
+        throw error;
+      }
+
+      return pubSub.asyncIterator(`society:members|society(${society._id})`);
     }
   },
 };

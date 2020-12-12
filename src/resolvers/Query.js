@@ -406,7 +406,7 @@ const Query = {
       throw error;
     }
 
-    const member = await Member.findById(userData.encryptedId).populate([{ path: "society", populate: { path: "members", match: { _id: { $ne: userData.encryptedId } } } }]);
+    const member = await Member.findById(userData.encryptedId).populate([{ path: "society", populate: { path: "members", match: { _id: { $ne: userData.encryptedId }, approved: true } } }]);
 
     if (!member) {
       const error = new Error("member not found!");
