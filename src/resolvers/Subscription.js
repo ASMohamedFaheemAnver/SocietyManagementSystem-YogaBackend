@@ -17,7 +17,10 @@ const Subscription = {
       return withCancel(pubSub.asyncIterator(`member:log|society(${member.society})`), () => {
         console.log({ emitted: "listenCommonMemberLog.unSubscribe" });
       });
-    }
+    },
+    resolve: (payload, args, context, info) => {
+      return payload.listenCommonMemberLog;
+    },
   },
 
   listenMemberFineLog: {
@@ -33,7 +36,10 @@ const Subscription = {
       return withCancel(pubSub.asyncIterator(`member:log:fine|member(${member._id})`), () => {
         console.log({ emitted: "listenMemberFineLog.unSubscribe" });
       });
-    }
+    },
+    resolve: (payload, args, context, info) => {
+      return payload.listenMemberFineLog;
+    },
   },
 
   listenMemberLogTrack: {
@@ -51,7 +57,10 @@ const Subscription = {
       return withCancel(pubSub.asyncIterator(`member:log:track|society(${member.society})&member(${member._id})`), () => {
         console.log({ emitted: "listenMemberLogTrack.unSubscribe" });
       });
-    }
+    },
+    resolve: (payload, args, context, info) => {
+      return payload.listenMemberLogTrack;
+    },
   },
 
   listenSocietyMembers: {
@@ -69,7 +78,10 @@ const Subscription = {
       return withCancel(pubSub.asyncIterator(`member:members|society(${member.society})`), () => {
         console.log({ emitted: "listenSocietyMembers.unSubscribe" });
       });
-    }
+    },
+    resolve: (payload, args, context, info) => {
+      return payload.listenSocietyMembers;
+    },
   },
 
   listenNewSocietyMembers: {
@@ -87,7 +99,10 @@ const Subscription = {
       return withCancel(pubSub.asyncIterator(`society:members|society(${society._id})`), () => {
         console.log({ emitted: "listenNewSocietyMembers.unSubscribe" });
       });
-    }
+    },
+    resolve: (payload, args, context, info) => {
+      return payload.listenNewSocietyMembers;
+    },
   },
 };
 

@@ -718,7 +718,7 @@ const Mutation = {
   },
 
   addFineForOneMember: async (parent, { fineInput: { fine, description, member_id } }, { pubSub, request }, info) => {
-    console.log({ emitted: "addFineForOneMember", data: { fine, description, member_id } });
+    console.log({ emitted: "addFineForOneMember" });
 
     const userData = getUserData(request);
 
