@@ -7,3 +7,7 @@
 
 #Subscriptions
 #https://www.apollographql.com/docs/angular/features/subscriptions
+
+
+#Detect an unsubscribe in Apollo graphql server
+#https://stackoverflow.com/questions/56886412/detect-an-unsubscribe-in-apollo-graphql-server

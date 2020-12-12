@@ -6,7 +6,7 @@ const Society = require("../model/society");
 const Subscription = {
   listenCommonMemberLog: {
     subscribe: async (parent, args, { request, pubSub }, info) => {
-      console.log({ emitted: "listenMemberLog" });
+      console.log({ emitted: "listenCommonMemberLog" });
       const userData = getUserData(request);
       const member = await Member.findById(userData.encryptedId);
       if (!member) {
@@ -14,7 +14,9 @@ const Subscription = {
         error.code = 403;
         throw error;
       }
-      return pubSub.asyncIterator(`member:log|society(${member.society})`);
+      return withCancel(pubSub.asyncIterator(`member:log|society(${member.society})`), () => {
+        console.log({ emitted: "listenCommonMemberLog.unSubscribe" });
+      });
     }
   },
 
@@ -28,7 +30,9 @@ const Subscription = {
         error.code = 403;
         throw error;
       }
-      return pubSub.asyncIterator(`member:log:fine|member(${member._id})`);
+      return withCancel(pubSub.asyncIterator(`member:log:fine|member(${member._id})`), () => {
+        console.log({ emitted: "listenMemberFineLog.unSubscribe" });
+      });
     }
   },
 
@@ -44,7 +48,9 @@ const Subscription = {
         throw error;
       }
 
-      return pubSub.asyncIterator(`member:log:track|society(${member.society})&member(${member._id})`);
+      return withCancel(pubSub.asyncIterator(`member:log:track|society(${member.society})&member(${member._id})`), () => {
+        console.log({ emitted: "listenMemberLogTrack.unSubscribe" });
+      });
     }
   },
 
@@ -60,7 +66,9 @@ const Subscription = {
         throw error;
       }
 
-      return pubSub.asyncIterator(`member:members|society(${member.society})`);
+      return withCancel(pubSub.asyncIterator(`member:members|society(${member.society})`), () => {
+        console.log({ emitted: "listenSocietyMembers.unSubscribe" });
+      });
     }
   },
 
@@ -76,9 +84,22 @@ const Subscription = {
         throw error;
       }
 
-      return pubSub.asyncIterator(`society:members|society(${society._id})`);
+      return withCancel(pubSub.asyncIterator(`society:members|society(${society._id})`), () => {
+        console.log({ emitted: "listenNewSocietyMembers.unSubscribe" });
+      });
     }
   },
+};
+
+const withCancel = (asyncIterator, onCancel) => {
+  const asyncReturn = asyncIterator.return;
+
+  asyncIterator.return = () => {
+    onCancel();
+    return asyncReturn ? asyncReturn.call(asyncIterator) : Promise.resolve({ value: undefined, done: true });
+  };
+
+  return asyncIterator;
 };
 
 export { Subscription as default };
