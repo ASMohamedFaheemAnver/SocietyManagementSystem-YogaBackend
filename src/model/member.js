@@ -27,6 +27,11 @@ const memberSchema = new Schema({
     type: String,
     required: true,
   },
+  donations: {
+    type: Number,
+    default: 0,
+    required: true
+  },
   approved: {
     type: Boolean,
     default: false,
