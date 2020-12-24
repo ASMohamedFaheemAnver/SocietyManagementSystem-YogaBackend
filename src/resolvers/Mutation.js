@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 
 const cloudFile = require("../util/cloud-file");
 import getUserData from "../middleware/auth";
+import donation from "../model/donation";
 
 const Society = require("../model/society");
 const Member = require("../model/member");
@@ -11,6 +12,7 @@ const ExtraFee = require("../model/extra-fee");
 const Log = require("../model/log");
 const Track = require("../model/track");
 const Fine = require("../model/fine");
+const Donation = require("../model/donation");
 
 
 const Mutation = {
@@ -687,30 +689,39 @@ const Mutation = {
     }
 
     society.logs[0].item.tracks.forEach(async track => {
-      if (track.is_paid) {
+      if (track.is_paid && society.logs[0].kind !== "Donation") {
         society.current_income -= society.logs[0].item.amount;
-      } else {
+      } else if (society.logs[0].kind !== "Donation") {
         track.member.arrears -= society.logs[0].item.amount;
       }
 
-      society.expected_income -= society.logs[0].item.amount;
+      let member;
+      if (society.logs[0].kind !== "Donation") {
+        society.expected_income -= society.logs[0].item.amount;
+        member = await Member.findOneAndUpdate({ _id: track.member._id }, { arrears: track.member.arrears, $pull: { logs: log_id } }, { new: true });
 
+        await Society.findByIdAndUpdate(society._id, {
+          $pull: { logs: log_id }, $push: { removed_logs: log_id }, expected_income: society.expected_income, current_income: society.current_income
+        });
 
-      const member = await Member.findOneAndUpdate({ _id: track.member._id }, { arrears: track.member.arrears, $pull: { logs: log_id } }, { new: true });
+      } else if (society.logs[0].kind === "Donation") {
+        society.donations -= society.logs[0].item.amount;
+        member = await Member.findOneAndUpdate({ _id: track.member._id }, { $inc: { donations: -society.logs[0].item.amount }, $pull: { logs: log_id } }, { new: true });
+
+        await Society.findByIdAndUpdate(society._id, {
+          $pull: { logs: log_id }, $push: { removed_logs: log_id }, $inc: { donations: -society.logs[0].item.amount }
+        });
+
+      }
       pubSub.publish(`member:members|society(${society._id})`, { listenSocietyMembers: { member: member, type: "PUT" } });
-    });
-
-    await Society.findByIdAndUpdate(society._id, {
-      $pull: { logs: log_id }, $push: { removed_logs: log_id }, expected_income: society.expected_income, current_income: society.current_income
     });
 
     await Log.findByIdAndUpdate(log_id, { is_removed: true });
 
 
-
-    if (society.logs[0].kind !== "Fine") {
+    if (society.logs[0].kind === "MonthFee" || society.logs[0].kind === "ExtraFee") {
       pubSub.publish(`member:log|society(${society._id})`, { listenCommonMemberLog: { log: society.logs[0], type: "DELETE" } });
-    } else {
+    } else if (society.logs[0].kind === "Fine") {
       pubSub.publish(`member:log:fine|member(${society.logs[0].item.tracks[0].member._id})`, { listenMemberFineLog: { log: society.logs[0], type: "DELETE" } });
     }
 
@@ -779,6 +790,71 @@ const Mutation = {
     pubSub.publish(`member:members|society(${society._id})`, { listenSocietyMembers: { member: member, type: "PUT" } });
 
     return { message: "fine added!" };
+
+  },
+
+  addDonationForOneMember: async (parent, { donationInput: { donation, description, member_id } }, { pubSub, request }, info) => {
+    console.log({ emitted: "addDonationForOneMember" });
+
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (userData.category !== "society") {
+      const error = new Error("only society can edit payments!");
+      error.code = 401;
+      throw error;
+    }
+
+    const society = await Society.findById(userData.encryptedId);
+    if (!society) {
+      const error = new Error("society doesn't exist!");
+      error.code = 403;
+      throw error;
+    }
+
+    const member = await Member.findById(member_id);
+
+    if (member.society.toString() !== society._id.toString()) {
+      const error = new Error("only society can edit payments!");
+      error.code = 401;
+      throw error;
+    }
+
+    const track = new Track({ member: member, is_paid: true });
+    track.save();
+
+    const donationObj = new Donation({
+      amount: donation,
+      description: description,
+      date: new Date(),
+      tracks: [track]
+    });
+
+    await donationObj.save();
+
+    const log = new Log({ kind: "Donation", item: donationObj });
+    await log.save();
+
+
+    society.logs.push(log);
+    society.donations ? society.donations += donation : society.donations = donation;
+    await society.save();
+
+    member.logs.push(log);
+    member.donations ? member.donations += donation : member.donations = donation;
+    await member.save();
+
+    log.fee = log.item;
+
+    pubSub.publish(`member:log:donation|member(${member._id})`, { listenMemberDonationLog: { log: log, type: "POST" } });
+    // pubSub.publish(`member:members|society(${society._id})`, { listenSocietyMembers: { member: member, type: "PUT" } });
+
+    return { message: "donation added!" };
 
   }
 };

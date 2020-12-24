@@ -82,6 +82,12 @@ input FineInputData {
   member_id: ID!
 }
 
+input DonationInputData {
+  donation: Int!
+  description: String!
+  member_id: ID!
+}
+
 type Member {
   _id: ID!
   name: String!
@@ -130,6 +136,7 @@ type Mutation {
   addMonthlyFeeToEveryone(monthlyFee: Int!, description: String!): SocietyLog!
   addExtraFeeToEveryone(extraFee: Int!, description: String!): SocietyLog!
   addFineForOneMember(fineInput: FineInputData!): Message!
+  addDonationForOneMember(donationInput: DonationInputData!): Message!
   makeFeePaidForOneMember(track_id: ID!, log_id: ID!): Message!
   makeFeeUnPaidForOneMember(track_id: ID!, log_id: ID!): Message!
   approveMember(memberId: String!): Message!
@@ -144,6 +151,7 @@ type Subscription {
   listenSocietyMembers: societyMembersSubscriptionPayload!
   listenNewSocietyMembers: societyMembersSubscriptionPayload!
   listenMemberFineLog: fineLogSubscriptionPayload!
+  listenMemberDonationLog: donationLogSubscriptionPayload!
 }
 
 enum MutationType {
@@ -159,6 +167,12 @@ type logSubscriptionPayload {
 }
 
 type fineLogSubscriptionPayload {
+  log: MemberLog!
+  type: MutationType!
+  is_fee_mutated: Boolean
+}
+
+type donationLogSubscriptionPayload {
   log: MemberLog!
   type: MutationType!
   is_fee_mutated: Boolean
