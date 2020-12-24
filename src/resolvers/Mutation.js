@@ -619,7 +619,7 @@ const Mutation = {
     let is_fee_mutated = false;
 
     const society = await Society.findById(userData.encryptedId);
-    if (log.item.amount !== fee) {
+    if (log.item.amount !== fee && log.kind !== "Donation") {
       for (let i = 0; i < log.item.tracks.length; i++) {
         let track = log.item.tracks[i];
 
@@ -647,15 +647,25 @@ const Mutation = {
         }
       }
       is_fee_mutated = true;
+    } if (log.item.amount !== fee && log.kind === "Donation") {
+      society.donations += fee;
+      society.donations -= log.item.amount;
+      await society.save();
+
+      let member = log.item.tracks[0].member;
+      member.donations += fee;
+      member.donations -= log.item.amount;
+      await member.save();
+
     }
 
     log.item.amount = fee;
     log.item.description = description;
     await log.item.save();
     log.fee = log.item;
-    if (log.kind !== "Fine") {
+    if (log.kind === "MonthFee" || log.kind === "ExtraFee") {
       pubSub.publish(`member:log|society(${society._id})`, { listenCommonMemberLog: { log: log, type: "PUT", is_fee_mutated: is_fee_mutated } });
-    } else {
+    } else if (log.kind === "Fine") {
       pubSub.publish(`member:log:fine|member(${log.item.tracks[0].member._id})`, { listenMemberFineLog: { log: log, type: "PUT", is_fee_mutated: is_fee_mutated } });
     }
     return log;
