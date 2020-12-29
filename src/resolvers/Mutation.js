@@ -439,6 +439,12 @@ const Mutation = {
       throw error;
     }
 
+    if (log.kind === "Donation") {
+      const error = new Error("donation track can't be edited!");
+      error.code = 401;
+      throw error;
+    }
+
     const track = await Track.findById(track_id).populate();
 
     const member = await Member.findById(track.member);
@@ -506,6 +512,12 @@ const Mutation = {
 
     if (!log) {
       const error = new Error("activity removed!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (log.kind === "Donation") {
+      const error = new Error("donation track can't be edited!");
       error.code = 401;
       throw error;
     }
