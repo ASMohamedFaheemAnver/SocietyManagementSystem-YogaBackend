@@ -14,7 +14,6 @@ const Track = require("../model/track");
 const Fine = require("../model/fine");
 const Donation = require("../model/donation");
 
-
 const Mutation = {
   approveSociety: async (parent, { societyId }, { request }, info) => {
     console.log({ emitted: "approveSociety" });
@@ -145,7 +144,6 @@ const Mutation = {
 
     const createdSociety = await society.save();
     return createdSociety._doc;
-
   },
 
   createMember: async (parent, { memberInput }, { request, pubSub }, info) => {
@@ -221,16 +219,22 @@ const Mutation = {
     existingSociety.number_of_members++;
     await existingSociety.save();
 
-    pubSub.publish(`society:members|society(${existingSociety._id})`, { listenNewSocietyMembers: { member: createdMember, type: "POST" } });
+    pubSub.publish(`society:members|society(${existingSociety._id})`, {
+      listenNewSocietyMembers: { member: createdMember, type: "POST" },
+    });
 
     return createdMember._doc;
   },
 
-  addMonthlyFeeToEveryone: async (parent, { monthlyFee, description }, { request, pubSub }, info) => {
+  addMonthlyFeeToEveryone: async (
+    parent,
+    { monthlyFee, description },
+    { request, pubSub },
+    info
+  ) => {
     console.log({ emitted: "addMonthlyFeeToEveryone" });
 
     const userData = getUserData(request);
-
 
     if (!userData) {
       const error = new Error("not authenticated!");
@@ -250,14 +254,16 @@ const Mutation = {
       throw error;
     }
 
-    const society = await Society.findById(userData.encryptedId).populate([{ path: "members" }, { path: "logs", match: { kind: "MonthFee" }, populate: { path: "item" } }]);
+    const society = await Society.findById(userData.encryptedId).populate([
+      { path: "members" },
+      { path: "logs", match: { kind: "MonthFee" }, populate: { path: "item" } },
+    ]);
 
     if (!society) {
       const error = new Error("society not found to add monthly fee!");
       error.code = 404;
       throw error;
     }
-
 
     if (society.members.length < 1) {
       const error = new Error("no member exist!");
@@ -301,7 +307,9 @@ const Mutation = {
       await track.save();
       monthFee.tracks.push(track);
 
-      pubSub.publish(`member:members|society(${society._id})`, { listenSocietyMembers: { member: society.members[i], type: "PUT" } });
+      pubSub.publish(`member:members|society(${society._id})`, {
+        listenSocietyMembers: { member: society.members[i], type: "PUT" },
+      });
     }
 
     await monthFee.save();
@@ -311,12 +319,13 @@ const Mutation = {
 
     log.fee = log.item;
 
-    pubSub.publish(`member:log|society(${society._id})`, { listenCommonMemberLog: { log: log, type: "POST" } });
+    pubSub.publish(`member:log|society(${society._id})`, {
+      listenCommonMemberLog: { log: log, type: "POST" },
+    });
     return log;
   },
 
   addExtraFeeToEveryone: async (parent, { extraFee, description }, { request, pubSub }, info) => {
-
     console.log({ emitted: "addExtraFeeToEveryone" });
 
     const userData = getUserData(request);
@@ -373,7 +382,9 @@ const Mutation = {
       await track.save();
       extraFeeObj.tracks.push(track);
       await member.save();
-      pubSub.publish(`member:members|society(${society._id})`, { listenSocietyMembers: { member: member, type: "PUT" } });
+      pubSub.publish(`member:members|society(${society._id})`, {
+        listenSocietyMembers: { member: member, type: "PUT" },
+      });
     }
 
     await extraFeeObj.save();
@@ -385,7 +396,9 @@ const Mutation = {
     log.fee = log.item;
 
     // Emitting event to all observers but If we need to filter it, we can use `member(${member._id})`
-    pubSub.publish(`member:log|society(${society._id})`, { listenCommonMemberLog: { log: log, type: "POST" } });
+    pubSub.publish(`member:log|society(${society._id})`, {
+      listenCommonMemberLog: { log: log, type: "POST" },
+    });
 
     return log;
   },
@@ -417,7 +430,9 @@ const Mutation = {
       throw error;
     }
 
-    const log = await Log.findOne({ _id: log_id, is_removed: false }).populate([{ path: "item", populate: { path: "tracks", match: { _id: track_id } } }]);
+    const log = await Log.findOne({ _id: log_id, is_removed: false }).populate([
+      { path: "item", populate: { path: "tracks", match: { _id: track_id } } },
+    ]);
     if (!log) {
       const error = new Error("activity removed!");
       error.code = 401;
@@ -450,8 +465,12 @@ const Mutation = {
 
     log.fee = log.item;
     log.fee.tracks[0] = track;
-    pubSub.publish(`member:log:track|society(${society._id})&member(${member._id})`, { listenMemberLogTrack: { log: log, type: "PUT" } });
-    pubSub.publish(`member:members|society(${society._id})`, { listenSocietyMembers: { member: member, type: "PUT" } });
+    pubSub.publish(`member:log:track|society(${society._id})&member(${member._id})`, {
+      listenMemberLogTrack: { log: log, type: "PUT" },
+    });
+    pubSub.publish(`member:members|society(${society._id})`, {
+      listenSocietyMembers: { member: member, type: "PUT" },
+    });
 
     return { message: "member paid the ammount!" };
   },
@@ -481,7 +500,9 @@ const Mutation = {
       throw error;
     }
 
-    const log = await Log.findOne({ _id: log_id, is_removed: false }).populate([{ path: "item", populate: { path: "tracks", match: { _id: track_id } } }]);
+    const log = await Log.findOne({ _id: log_id, is_removed: false }).populate([
+      { path: "item", populate: { path: "tracks", match: { _id: track_id } } },
+    ]);
 
     if (!log) {
       const error = new Error("activity removed!");
@@ -492,7 +513,6 @@ const Mutation = {
     const track = await Track.findById(track_id).populate("member");
 
     const member = await Member.findById(track.member);
-
 
     if (!track.is_paid) {
       const error = new Error("this member already not paid the ammount!");
@@ -516,8 +536,12 @@ const Mutation = {
 
     log.fee = log.item;
     log.fee.tracks[0] = track;
-    pubSub.publish(`member:log:track|society(${society._id})&member(${member._id})`, { listenMemberLogTrack: { log: log, type: "PUT" } });
-    pubSub.publish(`member:members|society(${society._id})`, { listenSocietyMembers: { member: member, type: "PUT" } });
+    pubSub.publish(`member:log:track|society(${society._id})&member(${member._id})`, {
+      listenMemberLogTrack: { log: log, type: "PUT" },
+    });
+    pubSub.publish(`member:members|society(${society._id})`, {
+      listenSocietyMembers: { member: member, type: "PUT" },
+    });
 
     return { message: "member paid the ammount!" };
   },
@@ -609,7 +633,6 @@ const Mutation = {
       },
     ]);
 
-
     if (!log) {
       const error = new Error("activity removed!");
       error.code = 401;
@@ -633,7 +656,9 @@ const Mutation = {
           society.expected_income -= log.item.amount;
           society.current_income -= log.item.amount;
           await society.save();
-          pubSub.publish(`member:members|society(${society._id})`, { listenSocietyMembers: { member: member, type: "PUT" } });
+          pubSub.publish(`member:members|society(${society._id})`, {
+            listenSocietyMembers: { member: member, type: "PUT" },
+          });
         } else {
           let member = track.member;
           member.arrears -= log.item.amount;
@@ -643,20 +668,24 @@ const Mutation = {
           society.expected_income += fee;
           society.expected_income -= log.item.amount;
           await society.save();
-          pubSub.publish(`member:members|society(${society._id})`, { listenSocietyMembers: { member: member, type: "PUT" } });
+          pubSub.publish(`member:members|society(${society._id})`, {
+            listenSocietyMembers: { member: member, type: "PUT" },
+          });
         }
       }
       is_fee_mutated = true;
-    } if (log.item.amount !== fee && log.kind === "Donation") {
+    }
+    if (log.item.amount !== fee && log.kind === "Donation") {
       society.donations += fee;
       society.donations -= log.item.amount;
       await society.save();
+
+      is_fee_mutated = true;
 
       let member = log.item.tracks[0].member;
       member.donations += fee;
       member.donations -= log.item.amount;
       await member.save();
-
     }
 
     log.item.amount = fee;
@@ -664,9 +693,17 @@ const Mutation = {
     await log.item.save();
     log.fee = log.item;
     if (log.kind === "MonthFee" || log.kind === "ExtraFee") {
-      pubSub.publish(`member:log|society(${society._id})`, { listenCommonMemberLog: { log: log, type: "PUT", is_fee_mutated: is_fee_mutated } });
+      pubSub.publish(`member:log|society(${society._id})`, {
+        listenCommonMemberLog: { log: log, type: "PUT", is_fee_mutated: is_fee_mutated },
+      });
     } else if (log.kind === "Fine") {
-      pubSub.publish(`member:log:fine|member(${log.item.tracks[0].member._id})`, { listenMemberFineLog: { log: log, type: "PUT", is_fee_mutated: is_fee_mutated } });
+      pubSub.publish(`member:log:fine|member(${log.item.tracks[0].member._id})`, {
+        listenMemberFineLog: { log: log, type: "PUT", is_fee_mutated: is_fee_mutated },
+      });
+    } else if (log.kind === "Donation") {
+      pubSub.publish(`member:log:donation|member(${log.item.tracks[0].member._id})`, {
+        listenMemberDonationLog: { log: log, type: "PUT", is_fee_mutated: is_fee_mutated },
+      });
     }
     return log;
   },
@@ -687,10 +724,13 @@ const Mutation = {
       throw error;
     }
 
-    const society = await Society.findById(userData.encryptedId).populate([{
-      path: "logs", match: { _id: log_id }, populate: { path: "item", populate: { path: "tracks", populate: { path: "member" } } }
-    }]);
-
+    const society = await Society.findById(userData.encryptedId).populate([
+      {
+        path: "logs",
+        match: { _id: log_id },
+        populate: { path: "item", populate: { path: "tracks", populate: { path: "member" } } },
+      },
+    ]);
 
     if (!society.logs[0]) {
       const error = new Error("log was already deleted!");
@@ -698,7 +738,7 @@ const Mutation = {
       throw error;
     }
 
-    society.logs[0].item.tracks.forEach(async track => {
+    society.logs[0].item.tracks.forEach(async (track) => {
       if (track.is_paid && society.logs[0].kind !== "Donation") {
         society.current_income -= society.logs[0].item.amount;
       } else if (society.logs[0].kind !== "Donation") {
@@ -708,37 +748,58 @@ const Mutation = {
       let member;
       if (society.logs[0].kind !== "Donation") {
         society.expected_income -= society.logs[0].item.amount;
-        member = await Member.findOneAndUpdate({ _id: track.member._id }, { arrears: track.member.arrears, $pull: { logs: log_id } }, { new: true });
+        member = await Member.findOneAndUpdate(
+          { _id: track.member._id },
+          { arrears: track.member.arrears, $pull: { logs: log_id } },
+          { new: true }
+        );
 
         await Society.findByIdAndUpdate(society._id, {
-          $pull: { logs: log_id }, $push: { removed_logs: log_id }, expected_income: society.expected_income, current_income: society.current_income
+          $pull: { logs: log_id },
+          $push: { removed_logs: log_id },
+          expected_income: society.expected_income,
+          current_income: society.current_income,
         });
-
       } else if (society.logs[0].kind === "Donation") {
         society.donations -= society.logs[0].item.amount;
-        member = await Member.findOneAndUpdate({ _id: track.member._id }, { $inc: { donations: -society.logs[0].item.amount }, $pull: { logs: log_id } }, { new: true });
+        member = await Member.findOneAndUpdate(
+          { _id: track.member._id },
+          { $inc: { donations: -society.logs[0].item.amount }, $pull: { logs: log_id } },
+          { new: true }
+        );
 
         await Society.findByIdAndUpdate(society._id, {
-          $pull: { logs: log_id }, $push: { removed_logs: log_id }, $inc: { donations: -society.logs[0].item.amount }
+          $pull: { logs: log_id },
+          $push: { removed_logs: log_id },
+          $inc: { donations: -society.logs[0].item.amount },
         });
-
       }
-      pubSub.publish(`member:members|society(${society._id})`, { listenSocietyMembers: { member: member, type: "PUT" } });
+      pubSub.publish(`member:members|society(${society._id})`, {
+        listenSocietyMembers: { member: member, type: "PUT" },
+      });
     });
 
     await Log.findByIdAndUpdate(log_id, { is_removed: true });
 
-
     if (society.logs[0].kind === "MonthFee" || society.logs[0].kind === "ExtraFee") {
-      pubSub.publish(`member:log|society(${society._id})`, { listenCommonMemberLog: { log: society.logs[0], type: "DELETE" } });
+      pubSub.publish(`member:log|society(${society._id})`, {
+        listenCommonMemberLog: { log: society.logs[0], type: "DELETE" },
+      });
     } else if (society.logs[0].kind === "Fine") {
-      pubSub.publish(`member:log:fine|member(${society.logs[0].item.tracks[0].member._id})`, { listenMemberFineLog: { log: society.logs[0], type: "DELETE" } });
+      pubSub.publish(`member:log:fine|member(${society.logs[0].item.tracks[0].member._id})`, {
+        listenMemberFineLog: { log: society.logs[0], type: "DELETE" },
+      });
     }
 
     return { message: "log removed!" };
   },
 
-  addFineForOneMember: async (parent, { fineInput: { fine, description, member_id } }, { pubSub, request }, info) => {
+  addFineForOneMember: async (
+    parent,
+    { fineInput: { fine, description, member_id } },
+    { pubSub, request },
+    info
+  ) => {
     console.log({ emitted: "addFineForOneMember" });
 
     const userData = getUserData(request);
@@ -777,14 +838,13 @@ const Mutation = {
       amount: fine,
       description: description,
       date: new Date(),
-      tracks: [track]
+      tracks: [track],
     });
 
     await fineObj.save();
 
     const log = new Log({ kind: "Fine", item: fineObj });
     await log.save();
-
 
     society.logs.push(log);
     society.expected_income += fine;
@@ -796,14 +856,22 @@ const Mutation = {
 
     log.fee = log.item;
 
-    pubSub.publish(`member:log:fine|member(${member._id})`, { listenMemberFineLog: { log: log, type: "POST" } });
-    pubSub.publish(`member:members|society(${society._id})`, { listenSocietyMembers: { member: member, type: "PUT" } });
+    pubSub.publish(`member:log:fine|member(${member._id})`, {
+      listenMemberFineLog: { log: log, type: "POST" },
+    });
+    pubSub.publish(`member:members|society(${society._id})`, {
+      listenSocietyMembers: { member: member, type: "PUT" },
+    });
 
     return { message: "fine added!" };
-
   },
 
-  addDonationForOneMember: async (parent, { donationInput: { donation, description, member_id } }, { pubSub, request }, info) => {
+  addDonationForOneMember: async (
+    parent,
+    { donationInput: { donation, description, member_id } },
+    { pubSub, request },
+    info
+  ) => {
     console.log({ emitted: "addDonationForOneMember" });
 
     const userData = getUserData(request);
@@ -842,7 +910,7 @@ const Mutation = {
       amount: donation,
       description: description,
       date: new Date(),
-      tracks: [track]
+      tracks: [track],
     });
 
     await donationObj.save();
@@ -850,23 +918,23 @@ const Mutation = {
     const log = new Log({ kind: "Donation", item: donationObj });
     await log.save();
 
-
     society.logs.push(log);
-    society.donations ? society.donations += donation : society.donations = donation;
+    society.donations ? (society.donations += donation) : (society.donations = donation);
     await society.save();
 
     member.logs.push(log);
-    member.donations ? member.donations += donation : member.donations = donation;
+    member.donations ? (member.donations += donation) : (member.donations = donation);
     await member.save();
 
     log.fee = log.item;
 
-    pubSub.publish(`member:log:donation|member(${member._id})`, { listenMemberDonationLog: { log: log, type: "POST" } });
+    pubSub.publish(`member:log:donation|member(${member._id})`, {
+      listenMemberDonationLog: { log: log, type: "POST" },
+    });
     // pubSub.publish(`member:members|society(${society._id})`, { listenSocietyMembers: { member: member, type: "PUT" } });
 
     return { message: "donation added!" };
-
-  }
+  },
 };
 
 export { Mutation as default };
