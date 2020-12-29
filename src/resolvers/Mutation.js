@@ -3,7 +3,6 @@ const bcrypt = require("bcryptjs");
 
 const cloudFile = require("../util/cloud-file");
 import getUserData from "../middleware/auth";
-import donation from "../model/donation";
 
 const Society = require("../model/society");
 const Member = require("../model/member");
@@ -800,6 +799,10 @@ const Mutation = {
     } else if (society.logs[0].kind === "Fine") {
       pubSub.publish(`member:log:fine|member(${society.logs[0].item.tracks[0].member._id})`, {
         listenMemberFineLog: { log: society.logs[0], type: "DELETE" },
+      });
+    } else if (society.logs[0].kind === "Donation") {
+      pubSub.publish(`member:log:donation|member(${society.logs[0].item.tracks[0].member._id})`, {
+        listenMemberDonationLog: { log: society.logs[0], type: "DELETE" },
       });
     }
 
