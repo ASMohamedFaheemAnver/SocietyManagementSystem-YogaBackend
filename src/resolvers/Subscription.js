@@ -42,6 +42,25 @@ const Subscription = {
     },
   },
 
+  listenMemberDonationLog: {
+    subscribe: async (parent, args, { request, pubSub }, info) => {
+      console.log({ emitted: "listenMemberDonationLog" });
+      const userData = getUserData(request);
+      const member = await Member.findById(userData.encryptedId);
+      if (!member) {
+        const error = new Error("member doesn't exist!");
+        error.code = 403;
+        throw error;
+      }
+      return withCancel(pubSub.asyncIterator(`member:log:donation|member(${member._id})`), () => {
+        console.log({ emitted: "listenMemberDonationLog.unSubscribe" });
+      });
+    },
+    resolve: (payload, args, context, info) => {
+      return payload.listenMemberDonationLog;
+    },
+  },
+
   listenMemberLogTrack: {
     subscribe: async (parent, args, { request, pubSub }, info) => {
       console.log({ emitted: "listenMemberLogTrack" });
@@ -54,9 +73,12 @@ const Subscription = {
         throw error;
       }
 
-      return withCancel(pubSub.asyncIterator(`member:log:track|society(${member.society})&member(${member._id})`), () => {
-        console.log({ emitted: "listenMemberLogTrack.unSubscribe" });
-      });
+      return withCancel(
+        pubSub.asyncIterator(`member:log:track|society(${member.society})&member(${member._id})`),
+        () => {
+          console.log({ emitted: "listenMemberLogTrack.unSubscribe" });
+        }
+      );
     },
     resolve: (payload, args, context, info) => {
       return payload.listenMemberLogTrack;
@@ -111,7 +133,9 @@ const withCancel = (asyncIterator, onCancel) => {
 
   asyncIterator.return = () => {
     onCancel();
-    return asyncReturn ? asyncReturn.call(asyncIterator) : Promise.resolve({ value: undefined, done: true });
+    return asyncReturn
+      ? asyncReturn.call(asyncIterator)
+      : Promise.resolve({ value: undefined, done: true });
   };
 
   return asyncIterator;

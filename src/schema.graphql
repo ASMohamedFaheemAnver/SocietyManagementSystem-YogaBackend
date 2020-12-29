@@ -96,6 +96,7 @@ type Member {
   address: String!
   arrears: Int!
   approved: Boolean!
+  donations: Int!
 }
 
 type MemberLog {
