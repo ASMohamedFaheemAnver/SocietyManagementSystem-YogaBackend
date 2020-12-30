@@ -254,7 +254,7 @@ const Mutation = {
     }
 
     const society = await Society.findById(userData.encryptedId).populate([
-      { path: "members" },
+      { path: "members", approved: true },
       { path: "logs", match: { kind: "MonthFee" }, populate: { path: "item" } },
     ]);
 
@@ -341,7 +341,9 @@ const Mutation = {
       throw error;
     }
 
-    const society = await Society.findById(userData.encryptedId).populate("members");
+    const society = await Society.findById(userData.encryptedId).populate([
+      { path: "members", match: { approved: true } },
+    ]);
 
     if (!society) {
       const error = new Error("society not found to add extra fee!");
@@ -579,40 +581,23 @@ const Mutation = {
       error.code = 403;
       throw error;
     }
+    const isUserAlreadyApproved = await Member.exists({
+      _id: memberId,
+      society: userData.encryptedId,
+      approved: true,
+    });
+
+    if (isUserAlreadyApproved) {
+      const error = new Error("member already approved!");
+      error.code = 403;
+      throw error;
+    }
+
     await Member.updateOne(
       { _id: memberId, society: userData.encryptedId },
       { $set: { approved: true } }
     );
     return { message: "approved successfly!" };
-  },
-
-  disApproveMember: async (parent, { memberId }, { request }, info) => {
-    console.log({ emitted: "disApproveMember" });
-
-    const userData = getUserData(request);
-
-    if (!userData) {
-      const error = new Error("not authenticated!");
-      error.code = 401;
-      throw error;
-    }
-
-    if (userData.category !== "society") {
-      const error = new Error("only society can disapprove it's member!");
-      error.code = 401;
-      throw error;
-    }
-
-    if (!memberId) {
-      const error = new Error("invalid society id!");
-      error.code = 403;
-      throw error;
-    }
-    await Member.updateOne(
-      { _id: memberId, society: userData.encryptedId },
-      { $set: { approved: false } }
-    );
-    return { message: "disapproved successfly!" };
   },
 
   editFeeForEveryone: async (parent, { log_id, fee, description }, { request, pubSub }, info) => {
@@ -846,6 +831,12 @@ const Mutation = {
       throw error;
     }
 
+    if (!member.approved) {
+      const error = new Error("approve before adding fine!");
+      error.code = 401;
+      throw error;
+    }
+
     const track = new Track({ member: member });
     track.save();
 
@@ -914,6 +905,12 @@ const Mutation = {
 
     if (member.society.toString() !== society._id.toString()) {
       const error = new Error("only society can edit payments!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (!member.approved) {
+      const error = new Error("approve before adding donation!");
       error.code = 401;
       throw error;
     }
