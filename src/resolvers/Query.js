@@ -8,7 +8,6 @@ const Developer = require("../model/developer");
 const Society = require("../model/society");
 const Member = require("../model/member");
 
-
 const Query = {
   loginDeveloper: async (parent, { email, password }, ctx, info) => {
     console.log({ emitted: "loginDeveloper" });
@@ -157,7 +156,7 @@ const Query = {
       throw error;
     }
     if (userData.category !== "society") {
-      const error = new Error("only developer can delete societies!");
+      const error = new Error("only society can view it's info!");
       error.code = 401;
       throw error;
     }
@@ -183,7 +182,7 @@ const Query = {
     }
 
     if (userData.category !== "society") {
-      const error = new Error("only society can add fee to it's members!");
+      const error = new Error("only society can view it's logs!");
       error.code = 401;
       throw error;
     }
@@ -195,7 +194,6 @@ const Query = {
       error.code = 404;
       throw error;
     }
-
 
     logs_count = logs_count.logs.length;
     const society = await Society.findById(userData.encryptedId).populate([
@@ -220,7 +218,6 @@ const Query = {
       },
     ]);
 
-
     society.logs.map((log) => {
       log.fee = log.item;
 
@@ -231,7 +228,6 @@ const Query = {
   },
 
   getAllMembers: async (parent, args, { request }, info) => {
-
     console.log({ emitted: "getAllMembers" });
     const userData = getUserData(request);
 
@@ -308,7 +304,6 @@ const Query = {
   },
 
   getMember: async (parent, args, { request }, info) => {
-
     console.log({ emitted: "getMember" });
     const userData = getUserData(request);
 
@@ -319,12 +314,39 @@ const Query = {
     }
 
     if (userData.category !== "member") {
-      const error = new Error("only developer can approve societies!");
+      const error = new Error("only member can view his details!");
       error.code = 401;
       throw error;
     }
 
     const member = await Member.findById(userData.encryptedId);
+
+    if (!member) {
+      const error = new Error("member not found!");
+      error.code = 404;
+      throw error;
+    }
+
+    return member._doc;
+  },
+
+  getMemberById: async (parent, { member_id }, { request }, info) => {
+    console.log({ emitted: "getMemberById" });
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (userData.category !== "society") {
+      const error = new Error("only society can view it's member details!");
+      error.code = 401;
+      throw error;
+    }
+
+    const member = await Member.findOne({ _id: member_id, society: userData.encryptedId });
 
     if (!member) {
       const error = new Error("member not found!");
@@ -365,10 +387,9 @@ const Query = {
           path: "item",
           populate: {
             path: "tracks",
-            match: { member: userData.encryptedId }
-          }
+            match: { member: userData.encryptedId },
+          },
         },
-
       },
     ]);
 
@@ -387,6 +408,61 @@ const Query = {
       log.fee = log.item;
     });
 
+    return { logs: member.logs, logs_count: logs_count };
+  },
+
+  getMemberLogsById: async (parent, { member_id, page_number, page_size }, { request }, info) => {
+    console.log({ emitted: "getMemberLogsById" });
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (userData.category !== "society") {
+      const error = new Error("only member can see his logs!");
+      error.code = 401;
+      throw error;
+    }
+
+    const member = await Member.findOne({ _id: member_id, society: userData.encryptedId }).populate(
+      [
+        {
+          path: "logs",
+          options: {
+            skip: page_number * page_size,
+            limit: page_size,
+            sort: {
+              _id: -1,
+            },
+          },
+          populate: {
+            path: "item",
+            populate: {
+              path: "tracks",
+              match: { member: userData.encryptedId },
+            },
+          },
+        },
+      ]
+    );
+
+    if (!member) {
+      const error = new Error("member not found!");
+      error.code = 404;
+      throw error;
+    }
+
+    let logs_count = await Member.findById(member_id);
+    logs_count = logs_count.logs.length;
+
+    // console.log(society);
+
+    member.logs.map((log) => {
+      log.fee = log.item;
+    });
 
     return { logs: member.logs, logs_count: logs_count };
   },
@@ -406,7 +482,15 @@ const Query = {
       throw error;
     }
 
-    const member = await Member.findById(userData.encryptedId).populate([{ path: "society", populate: { path: "members", match: { _id: { $ne: userData.encryptedId }, approved: true } } }]);
+    const member = await Member.findById(userData.encryptedId).populate([
+      {
+        path: "society",
+        populate: {
+          path: "members",
+          match: { _id: { $ne: userData.encryptedId }, approved: true },
+        },
+      },
+    ]);
 
     if (!member) {
       const error = new Error("member not found!");
@@ -416,8 +500,6 @@ const Query = {
 
     return member.society.members;
   },
-
-
 };
 
 export { Query as default };
