@@ -442,7 +442,7 @@ const Query = {
             path: "item",
             populate: {
               path: "tracks",
-              match: { member: userData.encryptedId },
+              match: { member: member_id },
             },
           },
         },
