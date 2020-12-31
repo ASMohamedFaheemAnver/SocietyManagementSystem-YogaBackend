@@ -12,6 +12,7 @@ const Log = require("../model/log");
 const Track = require("../model/track");
 const Fine = require("../model/fine");
 const Donation = require("../model/donation");
+const RefinementFee = require("../model/refinement-fee");
 
 const Mutation = {
   approveSociety: async (parent, { societyId }, { request }, info) => {
@@ -870,6 +871,84 @@ const Mutation = {
     });
 
     return { message: "fine added!" };
+  },
+
+  addRefinementFeeForOneMember: async (
+    parent,
+    { refinementFee, description, member_id },
+    { pubSub, request },
+    info
+  ) => {
+    console.log({ emitted: "addRefinementFeeForOneMember" });
+
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (userData.category !== "society") {
+      const error = new Error("only society can edit payments!");
+      error.code = 401;
+      throw error;
+    }
+
+    const society = await Society.findById(userData.encryptedId);
+    if (!society) {
+      const error = new Error("society doesn't exist!");
+      error.code = 403;
+      throw error;
+    }
+
+    const member = await Member.findById(member_id);
+
+    if (member.society.toString() !== society._id.toString()) {
+      const error = new Error("only society can edit payments!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (!member.approved) {
+      const error = new Error("approve before adding fine!");
+      error.code = 401;
+      throw error;
+    }
+
+    const track = new Track({ member: member });
+    track.save();
+
+    const refinementFeeObj = new RefinementFee({
+      amount: refinementFee,
+      description: description,
+      date: new Date(),
+      tracks: [track],
+    });
+
+    await refinementFeeObj.save();
+
+    const log = new Log({ kind: "RefinementFee", item: refinementFeeObj });
+    await log.save();
+
+    society.logs.push(log);
+    society.expected_income += refinementFee;
+    await society.save();
+
+    member.logs.push(log);
+    member.arrears += refinementFee;
+    await member.save();
+
+    log.fee = log.item;
+
+    pubSub.publish(`member:log:fine|member(${member._id})`, {
+      listenMemberFineLog: { log: log, type: "POST" },
+    });
+    pubSub.publish(`member:members|society(${society._id})`, {
+      listenSocietyMembers: { member: member, type: "PUT" },
+    });
+
+    return { message: "refinement fee added!" };
   },
 
   addDonationForOneMember: async (
