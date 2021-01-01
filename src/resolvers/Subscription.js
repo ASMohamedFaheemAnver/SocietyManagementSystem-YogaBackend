@@ -23,9 +23,9 @@ const Subscription = {
     },
   },
 
-  listenMemberFineLog: {
+  listenMemberFineOrRefinementLog: {
     subscribe: async (parent, args, { request, pubSub }, info) => {
-      console.log({ emitted: "listenMemberFineLog" });
+      console.log({ emitted: "listenMemberFineOrRefinementLog" });
       const userData = getUserData(request);
       const member = await Member.findById(userData.encryptedId);
       if (!member) {
@@ -33,12 +33,15 @@ const Subscription = {
         error.code = 403;
         throw error;
       }
-      return withCancel(pubSub.asyncIterator(`member:log:fine|member(${member._id})`), () => {
-        console.log({ emitted: "listenMemberFineLog.unSubscribe" });
-      });
+      return withCancel(
+        pubSub.asyncIterator(`member:log:(fine|refinement)|member(${member._id})`),
+        () => {
+          console.log({ emitted: "listenMemberFineOrRefinementLog.unSubscribe" });
+        }
+      );
     },
     resolve: (payload, args, context, info) => {
-      return payload.listenMemberFineLog;
+      return payload.listenMemberFineOrRefinementLog;
     },
   },
 
