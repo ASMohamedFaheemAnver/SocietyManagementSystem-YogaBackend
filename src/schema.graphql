@@ -153,7 +153,7 @@ type Subscription {
   listenMemberLogTrack: logTrackSubscriptionPayload!
   listenSocietyMembers: societyMembersSubscriptionPayload!
   listenNewSocietyMembers: societyMembersSubscriptionPayload!
-  listenMemberFineLog: fineLogSubscriptionPayload!
+  listenMemberFineOrRefinementLog: fineOrRefinementLogSubscriptionPayload!
   listenMemberDonationLog: donationLogSubscriptionPayload!
 }
 
@@ -169,7 +169,7 @@ type logSubscriptionPayload {
   is_fee_mutated: Boolean
 }
 
-type fineLogSubscriptionPayload {
+type fineOrRefinementLogSubscriptionPayload {
   log: MemberLog!
   type: MutationType!
   is_fee_mutated: Boolean

@@ -693,9 +693,9 @@ const Mutation = {
       pubSub.publish(`member:log|society(${society._id})`, {
         listenCommonMemberLog: { log: log, type: "PUT", is_fee_mutated: is_fee_mutated },
       });
-    } else if (log.kind === "Fine") {
-      pubSub.publish(`member:log:fine|member(${log.item.tracks[0].member._id})`, {
-        listenMemberFineLog: { log: log, type: "PUT", is_fee_mutated: is_fee_mutated },
+    } else if (log.kind === "Fine" || log.kind === "RefinementFee") {
+      pubSub.publish(`member:log:(fine|refinement)|member(${log.item.tracks[0].member._id})`, {
+        listenMemberFineOrRefinementLog: { log: log, type: "PUT", is_fee_mutated: is_fee_mutated },
       });
     } else if (log.kind === "Donation") {
       pubSub.publish(`member:log:donation|member(${log.item.tracks[0].member._id})`, {
@@ -782,10 +782,13 @@ const Mutation = {
       pubSub.publish(`member:log|society(${society._id})`, {
         listenCommonMemberLog: { log: society.logs[0], type: "DELETE" },
       });
-    } else if (society.logs[0].kind === "Fine") {
-      pubSub.publish(`member:log:fine|member(${society.logs[0].item.tracks[0].member._id})`, {
-        listenMemberFineLog: { log: society.logs[0], type: "DELETE" },
-      });
+    } else if (society.logs[0].kind === "Fine" || society.logs[0].kind === "RefinementFee") {
+      pubSub.publish(
+        `member:log:(fine|refinement)|member(${society.logs[0].item.tracks[0].member._id})`,
+        {
+          listenMemberFineOrRefinementLog: { log: society.logs[0], type: "DELETE" },
+        }
+      );
     } else if (society.logs[0].kind === "Donation") {
       pubSub.publish(`member:log:donation|member(${society.logs[0].item.tracks[0].member._id})`, {
         listenMemberDonationLog: { log: society.logs[0], type: "DELETE" },
@@ -863,8 +866,8 @@ const Mutation = {
 
     log.fee = log.item;
 
-    pubSub.publish(`member:log:fine|member(${member._id})`, {
-      listenMemberFineLog: { log: log, type: "POST" },
+    pubSub.publish(`member:log:(fine|refinement)|member(${member._id})`, {
+      listenMemberFineOrRefinementLog: { log: log, type: "POST" },
     });
     pubSub.publish(`member:members|society(${society._id})`, {
       listenSocietyMembers: { member: member, type: "PUT" },
@@ -941,8 +944,8 @@ const Mutation = {
 
     log.fee = log.item;
 
-    pubSub.publish(`member:log:fine|member(${member._id})`, {
-      listenMemberFineLog: { log: log, type: "POST" },
+    pubSub.publish(`member:log:(fine|refinement)|member(${member._id})`, {
+      listenMemberFineOrRefinementLog: { log: log, type: "POST" },
     });
     pubSub.publish(`member:members|society(${society._id})`, {
       listenSocietyMembers: { member: member, type: "PUT" },
