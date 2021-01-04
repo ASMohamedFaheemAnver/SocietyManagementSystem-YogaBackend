@@ -138,9 +138,13 @@ type Mutation {
   createMember(memberInput: MemberInputData!): Member!
   addMonthlyFeeToEveryone(monthlyFee: Int!, description: String!): SocietyLog!
   addExtraFeeToEveryone(extraFee: Int!, description: String!): SocietyLog!
-  addRefinementFeeForOneMember(refinementFee: Int!, description: String!, member_id: ID!): Message!
-  addFineForOneMember(fineInput: FineInputData!): Message!
-  addDonationForOneMember(donationInput: DonationInputData!): Message!
+  addRefinementFeeForOneMember(
+    refinementFee: Int!
+    description: String!
+    member_id: ID!
+  ): SocietyLog!
+  addFineForOneMember(fineInput: FineInputData!): SocietyLog!
+  addDonationForOneMember(donationInput: DonationInputData!): SocietyLog!
   makeFeePaidForOneMember(track_id: ID!, log_id: ID!): Message!
   makeFeeUnPaidForOneMember(track_id: ID!, log_id: ID!): Message!
   approveMember(memberId: String!): Message!
