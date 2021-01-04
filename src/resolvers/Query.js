@@ -241,7 +241,9 @@ const Query = {
       error.code = 401;
       throw error;
     }
-    const society = await Society.findById(userData.encryptedId).populate("members");
+    const society = await Society.findById(userData.encryptedId).populate([
+      { path: "members", match: { is_removed: false } },
+    ]);
 
     if (!society) {
       const error = new Error("society not found to get members!");
@@ -280,9 +282,14 @@ const Query = {
       error.code = 401;
       throw error;
     }
-    // console.log(member.approved);
     if (!member.approved) {
       const error = new Error("member doesn't approved yet!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (member.is_removed) {
+      const error = new Error("you were removed from the society!");
       error.code = 401;
       throw error;
     }

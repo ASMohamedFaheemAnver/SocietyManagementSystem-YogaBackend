@@ -150,6 +150,7 @@ type Mutation {
   approveMember(memberId: String!): Message!
   editFeeForEveryone(log_id: ID!, fee: Int!, description: String!): SocietyLog!
   deleteFeeLog(log_id: ID!): Message!
+  deleteSocietyMember(member_id: ID!): Message!
 }
 
 type Subscription {
