@@ -30,11 +30,17 @@ const memberSchema = new Schema({
   donations: {
     type: Number,
     default: 0,
-    required: true
+    required: true,
   },
   approved: {
     type: Boolean,
     default: false,
+    required: true,
+  },
+  is_removed: {
+    type: Boolean,
+    default: false,
+    required: true,
   },
   phoneNumber: {
     type: String,

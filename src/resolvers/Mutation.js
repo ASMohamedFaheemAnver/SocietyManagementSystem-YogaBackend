@@ -255,7 +255,7 @@ const Mutation = {
     }
 
     const society = await Society.findById(userData.encryptedId).populate([
-      { path: "members", approved: true },
+      { path: "members", match: { approved: true, is_removed: false } },
       { path: "logs", match: { kind: "MonthFee" }, populate: { path: "item" } },
     ]);
 
@@ -343,7 +343,7 @@ const Mutation = {
     }
 
     const society = await Society.findById(userData.encryptedId).populate([
-      { path: "members", match: { approved: true } },
+      { path: "members", match: { approved: true, is_removed: false } },
     ]);
 
     if (!society) {
@@ -594,10 +594,17 @@ const Mutation = {
       throw error;
     }
 
-    await Member.updateOne(
-      { _id: memberId, society: userData.encryptedId },
+    const updateResult = await Member.updateOne(
+      { _id: memberId, society: userData.encryptedId, is_removed: false },
       { $set: { approved: true } }
     );
+
+    if (updateResult.nModified < 1) {
+      const error = new Error("can't approve removed member!");
+      error.code = 403;
+      throw error;
+    }
+
     return { message: "approved successfly!" };
   },
 
@@ -841,6 +848,12 @@ const Mutation = {
       throw error;
     }
 
+    if (member.is_removed) {
+      const error = new Error("can't add fine for removed member!");
+      error.code = 401;
+      throw error;
+    }
+
     const track = new Track({ member: member });
     track.save();
 
@@ -915,6 +928,12 @@ const Mutation = {
 
     if (!member.approved) {
       const error = new Error("approve before adding fine!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (member.is_removed) {
+      const error = new Error("can't add refinement for removed member!");
       error.code = 401;
       throw error;
     }
@@ -997,6 +1016,12 @@ const Mutation = {
       throw error;
     }
 
+    if (member.is_removed) {
+      const error = new Error("can't add donation for removed member!");
+      error.code = 401;
+      throw error;
+    }
+
     const track = new Track({ member: member, is_paid: true });
     track.save();
 
@@ -1028,6 +1053,67 @@ const Mutation = {
     // pubSub.publish(`member:members|society(${society._id})`, { listenSocietyMembers: { member: member, type: "PUT" } });
 
     return log;
+  },
+
+  deleteSocietyMember: async (parent, { member_id }, { request, pubSub }, info) => {
+    console.log({ emitted: "deleteSocietyMember" });
+
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (userData.category !== "society") {
+      const error = new Error("only society can remove member!");
+      error.code = 401;
+      throw error;
+    }
+
+    const society = await Society.findById(userData.encryptedId);
+    if (!society) {
+      const error = new Error("society doesn't exist!");
+      error.code = 403;
+      throw error;
+    }
+
+    const member = await Member.findById(member_id);
+
+    if (member.society.toString() !== society._id.toString()) {
+      const error = new Error("only society can remove it's member!");
+      error.code = 401;
+      throw error;
+    }
+
+    const isUserAlreadyRemoved = await Member.exists({
+      _id: member_id,
+      society: userData.encryptedId,
+      is_removed: true,
+    });
+
+    if (isUserAlreadyRemoved) {
+      const error = new Error("member already removed!");
+      error.code = 403;
+      throw error;
+    }
+
+    const memberUpdateResult = await Member.updateOne(
+      { _id: member_id, society: userData.encryptedId },
+      { $set: { is_removed: true } }
+    );
+
+    const societyUpdateResult = await Society.updateOne(
+      { _id: userData.encryptedId },
+      {
+        $pull: { members: member_id },
+        $push: { removed_members: member_id },
+        $inc: { number_of_members: -1 },
+      }
+    );
+
+    return { message: "member removed successfly!" };
   },
 };
 

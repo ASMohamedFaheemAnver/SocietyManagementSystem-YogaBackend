@@ -50,13 +50,14 @@ const societySchema = new Schema({
   donations: {
     type: Number,
     default: 0,
-    required: true
+    required: true,
   },
   month_fee: {
     type: { description: String, amount: Number },
     default: { description: "Monthly fees.", amount: 100 },
   },
   members: [{ type: Schema.Types.ObjectId, ref: "Member" }],
+  removed_members: [{ type: Schema.Types.ObjectId, ref: "Member" }],
   logs: [{ type: Schema.Types.ObjectId, ref: "Log" }],
   removed_logs: [{ type: Schema.Types.ObjectId, ref: "Log" }],
 });
