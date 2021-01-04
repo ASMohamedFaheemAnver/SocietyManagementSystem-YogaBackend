@@ -873,7 +873,7 @@ const Mutation = {
       listenSocietyMembers: { member: member, type: "PUT" },
     });
 
-    return { message: "fine added!" };
+    return log;
   },
 
   addRefinementFeeForOneMember: async (
@@ -951,7 +951,7 @@ const Mutation = {
       listenSocietyMembers: { member: member, type: "PUT" },
     });
 
-    return { message: "refinement fee added!" };
+    return log;
   },
 
   addDonationForOneMember: async (
@@ -1027,7 +1027,7 @@ const Mutation = {
     });
     // pubSub.publish(`member:members|society(${society._id})`, { listenSocietyMembers: { member: member, type: "PUT" } });
 
-    return { message: "donation added!" };
+    return log;
   },
 };
 
