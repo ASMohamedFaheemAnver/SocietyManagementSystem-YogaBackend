@@ -2,6 +2,7 @@ import getUserData from "../middleware/auth";
 
 const Member = require("../model/member");
 const Society = require("../model/society");
+const Developer = require("../model/developer");
 
 const Subscription = {
   listenCommonMemberLog: {
@@ -127,6 +128,27 @@ const Subscription = {
     },
     resolve: (payload, args, context, info) => {
       return payload.listenNewSocietyMembers;
+    },
+  },
+
+  listenNewSociety: {
+    subscribe: async (parent, args, { request, pubSub }, info) => {
+      console.log({ emitted: "listenNewSociety" });
+      const userData = getUserData(request);
+      const developer = await Developer.findById(userData.encryptedId);
+
+      if (!developer) {
+        const error = new Error("developer doesn't exist!");
+        error.code = 403;
+        throw error;
+      }
+
+      return withCancel(pubSub.asyncIterator(`developer:societies`), () => {
+        console.log({ emitted: "listenNewSociety.unSubscribe" });
+      });
+    },
+    resolve: (payload, args, context, info) => {
+      return payload.listenNewSociety;
     },
   },
 };

@@ -169,6 +169,7 @@ type Subscription {
   listenNewSocietyMembers: societyMembersSubscriptionPayload!
   listenMemberFineOrRefinementLog: fineOrRefinementLogSubscriptionPayload!
   listenMemberDonationLog: donationLogSubscriptionPayload!
+  listenNewSociety: societiesSubscriptionPayload!
 }
 
 enum MutationType {
@@ -202,5 +203,10 @@ type logTrackSubscriptionPayload {
 
 type societyMembersSubscriptionPayload {
   member: Member!
+  type: MutationType!
+}
+
+type societiesSubscriptionPayload {
+  society: Society!
   type: MutationType!
 }
