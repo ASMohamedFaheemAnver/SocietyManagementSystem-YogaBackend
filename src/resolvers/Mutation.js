@@ -285,7 +285,6 @@ const Mutation = {
     });
     const createdMember = await member.save();
     existingSociety.members.push(createdMember);
-    existingSociety.number_of_members++;
     await existingSociety.save();
 
     pubSub.publish(`society:members|society(${existingSociety._id})`, {
@@ -629,7 +628,7 @@ const Mutation = {
     return { message: "member paid the ammount!" };
   },
 
-  approveMember: async (parent, { memberId }, { request }, info) => {
+  approveMember: async (parent, { memberId }, { request, pubSub }, info) => {
     console.log({ emitted: "approveMember" });
 
     const userData = getUserData(request);
@@ -651,28 +650,36 @@ const Mutation = {
       error.code = 403;
       throw error;
     }
-    const isUserAlreadyApproved = await Member.exists({
-      _id: memberId,
-      society: userData.encryptedId,
-      approved: true,
-    });
 
-    if (isUserAlreadyApproved) {
+    const member = await Member.findById(memberId);
+    const society = await Society.findById(userData.encryptedId);
+
+    if (member.society.toString() !== society._id.toString()) {
+      const error = new Error("only society can edit it's member!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (member.approved) {
       const error = new Error("member already approved!");
       error.code = 403;
       throw error;
     }
 
-    const updateResult = await Member.updateOne(
-      { _id: memberId, society: userData.encryptedId, is_removed: false },
-      { $set: { approved: true } }
-    );
-
-    if (updateResult.nModified < 1) {
+    if (member.is_removed) {
       const error = new Error("can't approve removed member!");
       error.code = 403;
       throw error;
     }
+
+    member.approved = true;
+    await member.save();
+    society.number_of_members++;
+    await society.save();
+
+    pubSub.publish(`member:members|society(${userData.encryptedId})`, {
+      listenSocietyMembers: { member: member, type: "POST" },
+    });
 
     return { message: "approved successfly!" };
   },
@@ -1181,6 +1188,10 @@ const Mutation = {
         $inc: { number_of_members: -1 },
       }
     );
+
+    pubSub.publish(`member:members|society(${userData.encryptedId})`, {
+      listenSocietyMembers: { member: member, type: "DELETE" },
+    });
 
     return { message: "member removed successfly!" };
   },
