@@ -65,7 +65,7 @@ const Mutation = {
     return { message: "disapproved successfly!" };
   },
 
-  createSociety: async (parent, { societyInput }, { request }, info) => {
+  createSociety: async (parent, { societyInput }, { request, pubSub }, info) => {
     console.log({ emitted: "createSociety" });
     const errors = [];
     if (!validator.isEmail(societyInput.email)) {
@@ -143,6 +143,11 @@ const Mutation = {
     });
 
     const createdSociety = await society.save();
+
+    pubSub.publish(`developer:societies`, {
+      listenNewSociety: { society: createdSociety, type: "POST" },
+    });
+
     return createdSociety._doc;
   },
 
