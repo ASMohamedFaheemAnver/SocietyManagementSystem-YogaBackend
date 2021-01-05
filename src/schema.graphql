@@ -66,6 +66,14 @@ input SocietyInputData {
   image: Upload!
 }
 
+input SocietyProfileInputData {
+  name: String
+  address: String
+  phoneNumber: String
+  regNo: String
+  image: Upload
+}
+
 input MemberInputData {
   email: String!
   name: String!
@@ -151,6 +159,7 @@ type Mutation {
   editFeeForEveryone(log_id: ID!, fee: Int!, description: String!): SocietyLog!
   deleteFeeLog(log_id: ID!): Message!
   deleteSocietyMember(member_id: ID!): Message!
+  updateSocietyProfile(societyProfileInput: SocietyProfileInputData!): Message!
 }
 
 type Subscription {

@@ -6,12 +6,8 @@ import Subscription from "./resolvers/Subscription";
 import mongoose from "mongoose";
 import Developer from "./model/developer";
 
-
-
 const path = require("path");
 const fs = require("fs");
-
-
 
 const pubSub = new PubSub();
 
@@ -23,11 +19,14 @@ const server = new GraphQLServer({
     Subscription,
   },
   context(request) {
+    (function sleep(ms = 600) {
+      var unixtime_ms = new Date().getTime();
+      while (new Date().getTime() < unixtime_ms + ms) {}
+    })();
+
     return { pubSub, request };
   },
 });
-
-
 
 mongoose
   .connect(process.env.mongodb_url, {
@@ -37,7 +36,6 @@ mongoose
     useFindAndModify: false,
   })
   .then((_) => {
-
     const dir = path.join(__dirname, "images");
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir);

@@ -146,6 +146,75 @@ const Mutation = {
     return createdSociety._doc;
   },
 
+  updateSocietyProfile: async (parent, { societyProfileInput }, { request }, info) => {
+    console.log({ emitted: "updateSocietyProfile" });
+
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (userData.category !== "society") {
+      const error = new Error("only society can edit it's profile!");
+      error.code = 401;
+      throw error;
+    }
+
+    const errors = [];
+
+    if (societyProfileInput.name.length < 3) {
+      errors.push({ message: "name is invalid!" });
+    }
+
+    if (societyProfileInput.address.length < 10) {
+      errors.push({ message: "invalid address!" });
+    }
+
+    const phoneRegex = new RegExp("[+]*[0-9]{3,13}");
+
+    if (!phoneRegex.test(societyProfileInput.phoneNumber)) {
+      errors.push({ message: "invalid phone number!" });
+    }
+
+    const regRegex = new RegExp("([0-9]|[a-z]|[A-Z]){3,10}");
+
+    if (!regRegex.test(societyProfileInput.regNo)) {
+      errors.push({ message: "invalid registration number!" });
+    }
+
+    if (errors.length > 0) {
+      const error = new Error("invalid data submission!");
+      error.data = errors;
+      error.code = 422;
+      throw error;
+    }
+
+    const image = await societyProfileInput.image;
+
+    if (image !== "undefined") {
+      societyProfileInput.imageUrl = await cloudFile.uploadImageToCloud(image);
+    }
+
+    const society = await Society.findById(userData.encryptedId);
+
+    if (societyProfileInput.imageUrl) {
+      society.removed_image_urls.push(society.imageUrl);
+      society.imageUrl = societyProfileInput.imageUrl;
+    }
+
+    society.regNo = societyProfileInput.regNo;
+    society.name = societyProfileInput.name;
+    society.address = societyProfileInput.address;
+    society.phoneNumber = societyProfileInput.phoneNumber;
+
+    await society.save();
+
+    return { message: "society profile updated!" };
+  },
+
   createMember: async (parent, { memberInput }, { request, pubSub }, info) => {
     console.log({ emitted: "createMember" });
 
