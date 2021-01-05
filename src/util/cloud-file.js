@@ -3,7 +3,6 @@ const uuid = require("uuid-v4");
 const serviceAccount = require("../serviceAccountKey.json");
 const localFile = require("../util/local-file");
 
-
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   storageBucket: "gs://society-management-syste-6584a.appspot.com/",

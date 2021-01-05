@@ -23,6 +23,11 @@ const societySchema = new Schema({
     type: String,
     required: true,
   },
+  removed_image_urls: [
+    {
+      type: String,
+    },
+  ],
   password: {
     type: String,
     required: true,
