@@ -145,13 +145,13 @@ const Mutation = {
     const createdSociety = await society.save();
 
     pubSub.publish(`developer:societies`, {
-      listenNewSociety: { society: createdSociety, type: "POST" },
+      listenSociety: { society: createdSociety, type: "POST" },
     });
 
     return createdSociety._doc;
   },
 
-  updateSocietyProfile: async (parent, { societyProfileInput }, { request }, info) => {
+  updateSocietyProfile: async (parent, { societyProfileInput }, { request, pubSub }, info) => {
     console.log({ emitted: "updateSocietyProfile" });
 
     const userData = getUserData(request);
@@ -216,6 +216,10 @@ const Mutation = {
     society.phoneNumber = societyProfileInput.phoneNumber;
 
     await society.save();
+
+    pubSub.publish(`developer:societies`, {
+      listenSociety: { society: society, type: "PUT" },
+    });
 
     return { message: "society profile updated!" };
   },
