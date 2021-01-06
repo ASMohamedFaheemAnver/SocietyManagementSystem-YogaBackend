@@ -175,7 +175,8 @@ type Subscription {
   listenCommonMemberLog: logSubscriptionPayload!
   listenMemberLogTrack: logTrackSubscriptionPayload!
   listenSocietyMembers: societyMembersSubscriptionPayload!
-  listenNewSocietyMembers: societyMembersSubscriptionPayload!
+  listenSocietyMembersBySociety: societyMembersSubscriptionPayload!
+  listenMemberById(member_id: String!): societyMembersSubscriptionPayload!
   listenMemberFineOrRefinementLog: fineOrRefinementLogSubscriptionPayload!
   listenMemberDonationLog: donationLogSubscriptionPayload!
   listenNewSociety: societiesSubscriptionPayload!
