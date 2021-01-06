@@ -179,7 +179,7 @@ type Subscription {
   listenMemberById(member_id: String!): societyMembersSubscriptionPayload!
   listenMemberFineOrRefinementLog: fineOrRefinementLogSubscriptionPayload!
   listenMemberDonationLog: donationLogSubscriptionPayload!
-  listenNewSociety: societiesSubscriptionPayload!
+  listenSociety: societiesSubscriptionPayload!
 }
 
 enum MutationType {

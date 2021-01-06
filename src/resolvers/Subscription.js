@@ -131,9 +131,9 @@ const Subscription = {
     },
   },
 
-  listenNewSociety: {
+  listenSociety: {
     subscribe: async (parent, args, { request, pubSub }, info) => {
-      console.log({ emitted: "listenNewSociety" });
+      console.log({ emitted: "listenSociety" });
       const userData = getUserData(request);
       const developer = await Developer.findById(userData.encryptedId);
 
@@ -144,11 +144,11 @@ const Subscription = {
       }
 
       return withCancel(pubSub.asyncIterator(`developer:societies`), () => {
-        console.log({ emitted: "listenNewSociety.unSubscribe" });
+        console.log({ emitted: "listenSociety.unSubscribe" });
       });
     },
     resolve: (payload, args, context, info) => {
-      return payload.listenNewSociety;
+      return payload.listenSociety;
     },
   },
 
