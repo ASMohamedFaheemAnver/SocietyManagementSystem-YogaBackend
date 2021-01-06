@@ -220,6 +220,68 @@ const Mutation = {
     return { message: "society profile updated!" };
   },
 
+  updateMemberProfile: async (parent, { memberProfileInput }, { request }, info) => {
+    console.log({ emitted: "updateMemberProfile" });
+
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (userData.category !== "member") {
+      const error = new Error("only member can edit his profile!");
+      error.code = 401;
+      throw error;
+    }
+
+    const errors = [];
+
+    if (memberProfileInput.name.length < 3) {
+      errors.push({ message: "name is invalid!" });
+    }
+
+    if (memberProfileInput.address.length < 10) {
+      errors.push({ message: "invalid address!" });
+    }
+
+    const phoneRegex = new RegExp("[+]*[0-9]{3,13}");
+
+    if (!phoneRegex.test(memberProfileInput.phoneNumber)) {
+      errors.push({ message: "invalid phone number!" });
+    }
+
+    if (errors.length > 0) {
+      const error = new Error("invalid data submission!");
+      error.data = errors;
+      error.code = 422;
+      throw error;
+    }
+
+    const image = await memberProfileInput.image;
+
+    if (image !== "undefined") {
+      memberProfileInput.imageUrl = await cloudFile.uploadImageToCloud(image);
+    }
+
+    const member = await Member.findById(userData.encryptedId);
+
+    if (memberProfileInput.imageUrl) {
+      member.removed_image_urls.push(member.imageUrl);
+      member.imageUrl = memberProfileInput.imageUrl;
+    }
+
+    member.name = memberProfileInput.name;
+    member.address = memberProfileInput.address;
+    member.phoneNumber = memberProfileInput.phoneNumber;
+
+    await member.save();
+
+    return { message: "member profile updated!" };
+  },
+
   createMember: async (parent, { memberInput }, { request, pubSub }, info) => {
     console.log({ emitted: "createMember" });
 
