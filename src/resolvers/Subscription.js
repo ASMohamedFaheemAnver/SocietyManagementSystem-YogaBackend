@@ -110,9 +110,9 @@ const Subscription = {
     },
   },
 
-  listenNewSocietyMembers: {
+  listenSocietyMembersBySociety: {
     subscribe: async (parent, args, { request, pubSub }, info) => {
-      console.log({ emitted: "listenNewSocietyMembers" });
+      console.log({ emitted: "listenSocietyMembersBySociety" });
       const userData = getUserData(request);
       const society = await Society.findById(userData.encryptedId);
 
@@ -123,11 +123,11 @@ const Subscription = {
       }
 
       return withCancel(pubSub.asyncIterator(`society:members|society(${society._id})`), () => {
-        console.log({ emitted: "listenNewSocietyMembers.unSubscribe" });
+        console.log({ emitted: "listenSocietyMembersBySociety.unSubscribe" });
       });
     },
     resolve: (payload, args, context, info) => {
-      return payload.listenNewSocietyMembers;
+      return payload.listenSocietyMembersBySociety;
     },
   },
 
@@ -149,6 +149,30 @@ const Subscription = {
     },
     resolve: (payload, args, context, info) => {
       return payload.listenNewSociety;
+    },
+  },
+
+  listenMemberById: {
+    subscribe: async (parent, { member_id }, { request, pubSub }, info) => {
+      console.log({ emitted: "listenMemberById" });
+      const userData = getUserData(request);
+      const society = await Society.findById(userData.encryptedId);
+
+      if (!society) {
+        const error = new Error("society doesn't exist!");
+        error.code = 403;
+        throw error;
+      }
+
+      return withCancel(
+        pubSub.asyncIterator(`society:member|society(${society._id}):member(${member_id})`),
+        () => {
+          console.log({ emitted: "listenMemberById.unSubscribe" });
+        }
+      );
+    },
+    resolve: (payload, args, context, info) => {
+      return payload.listenMemberById;
     },
   },
 };
