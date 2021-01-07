@@ -58,6 +58,11 @@ const societySchema = new Schema(
       default: 0,
       required: true,
     },
+    expenses: {
+      type: Number,
+      default: 0,
+      required: true,
+    },
     month_fee: {
       type: { description: String, amount: Number },
       default: { description: "Monthly fees.", amount: 100 },

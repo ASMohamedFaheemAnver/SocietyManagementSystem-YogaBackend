@@ -108,6 +108,11 @@ input SocietyDonationInputData {
   description: String!
 }
 
+input SocietyExpenseInputData {
+  expense: Int!
+  description: String!
+}
+
 type Member {
   _id: ID!
   name: String!
@@ -175,6 +180,7 @@ type Mutation {
   updateSocietyProfile(societyProfileInput: SocietyProfileInputData!): Message!
   updateMemberProfile(memberProfileInput: MemberProfileInputData!): Message!
   addReceivedDonationBySociety(donationInput: SocietyDonationInputData!): SocietyLog!
+  addSocietyExpense(expenseInput: SocietyExpenseInputData!): SocietyLog!
 }
 
 type Subscription {

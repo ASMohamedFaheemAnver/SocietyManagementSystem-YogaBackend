@@ -12,6 +12,7 @@ const Log = require("../model/log");
 const Track = require("../model/track");
 const Fine = require("../model/fine");
 const Donation = require("../model/donation");
+const Expense = require("../model/expense");
 const RefinementFee = require("../model/refinement-fee");
 
 const Mutation = {
@@ -801,7 +802,7 @@ const Mutation = {
     let is_fee_mutated = false;
 
     const society = await Society.findById(userData.encryptedId);
-    if (log.item.amount !== fee && log.kind !== "Donation") {
+    if (log.item.amount !== fee && log.kind !== "Donation" && log.kind !== "Expense") {
       for (let i = 0; i < log.item.tracks.length; i++) {
         let track = log.item.tracks[i];
 
@@ -833,8 +834,7 @@ const Mutation = {
         }
       }
       is_fee_mutated = true;
-    }
-    if (log.item.amount !== fee && log.kind === "Donation") {
+    } else if (log.item.amount !== fee && log.kind === "Donation") {
       society.donations += fee;
       society.donations -= log.item.amount;
       await society.save();
@@ -847,6 +847,11 @@ const Mutation = {
         member.donations -= log.item.amount;
         await member.save();
       }
+    } else if (log.item.amount !== fee && log.kind === "Expense") {
+      society.expenses += fee;
+      society.expenses -= log.item.amount;
+      await society.save();
+      is_fee_mutated = true;
     }
 
     log.item.amount = fee;
@@ -944,6 +949,12 @@ const Mutation = {
         $pull: { logs: log_id },
         $push: { removed_logs: log_id },
         $inc: { donations: -society.logs[0].item.amount },
+      });
+    } else if (society.logs[0].kind === "Expense") {
+      await Society.findByIdAndUpdate(society._id, {
+        $pull: { logs: log_id },
+        $push: { removed_logs: log_id },
+        $inc: { expenses: -society.logs[0].item.amount },
       });
     }
 
@@ -1262,6 +1273,56 @@ const Mutation = {
 
     society.logs.push(log);
     society.donations ? (society.donations += donation) : (society.donations = donation);
+    await society.save();
+
+    log.fee = log.item;
+
+    return log;
+  },
+
+  addSocietyExpense: async (
+    parent,
+    { expenseInput: { expense, description } },
+    { pubSub, request },
+    info
+  ) => {
+    console.log({ emitted: "addSocietyExpense" });
+
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (userData.category !== "society") {
+      const error = new Error("only society can edit payments!");
+      error.code = 401;
+      throw error;
+    }
+
+    const society = await Society.findById(userData.encryptedId);
+    if (!society) {
+      const error = new Error("society doesn't exist!");
+      error.code = 403;
+      throw error;
+    }
+
+    const expenseObj = new Expense({
+      amount: expense,
+      description: description,
+      date: new Date(),
+      tracks: [],
+    });
+
+    await expenseObj.save();
+
+    const log = new Log({ kind: "Expense", item: expenseObj });
+    await log.save();
+
+    society.logs.push(log);
+    society.expenses ? (society.expenses += expense) : (society.expenses = expense);
     await society.save();
 
     log.fee = log.item;
