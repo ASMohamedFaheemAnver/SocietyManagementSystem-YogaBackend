@@ -841,10 +841,12 @@ const Mutation = {
 
       is_fee_mutated = true;
 
-      let member = log.item.tracks[0].member;
-      member.donations += fee;
-      member.donations -= log.item.amount;
-      await member.save();
+      if (log.item.tracks.length) {
+        let member = log.item.tracks[0].member;
+        member.donations += fee;
+        member.donations -= log.item.amount;
+        await member.save();
+      }
     }
 
     log.item.amount = fee;
@@ -859,7 +861,7 @@ const Mutation = {
       pubSub.publish(`member:log:(fine|refinement)|member(${log.item.tracks[0].member._id})`, {
         listenMemberFineOrRefinementLog: { log: log, type: "PUT", is_fee_mutated: is_fee_mutated },
       });
-    } else if (log.kind === "Donation") {
+    } else if (log.kind === "Donation" && log.item.tracks.length) {
       pubSub.publish(`member:log:donation|member(${log.item.tracks[0].member._id})`, {
         listenMemberDonationLog: { log: log, type: "PUT", is_fee_mutated: is_fee_mutated },
       });
@@ -897,46 +899,53 @@ const Mutation = {
       throw error;
     }
 
-    society.logs[0].item.tracks.forEach(async (track) => {
-      if (track.is_paid && society.logs[0].kind !== "Donation") {
-        society.current_income -= society.logs[0].item.amount;
-      } else if (society.logs[0].kind !== "Donation") {
-        track.member.arrears -= society.logs[0].item.amount;
-      }
+    if (society.logs[0].item.tracks.length) {
+      society.logs[0].item.tracks.forEach(async (track) => {
+        if (track.is_paid && society.logs[0].kind !== "Donation") {
+          society.current_income -= society.logs[0].item.amount;
+        } else if (society.logs[0].kind !== "Donation") {
+          track.member.arrears -= society.logs[0].item.amount;
+        }
 
-      let member;
-      if (society.logs[0].kind !== "Donation") {
-        society.expected_income -= society.logs[0].item.amount;
-        member = await Member.findOneAndUpdate(
-          { _id: track.member._id },
-          { arrears: track.member.arrears, $pull: { logs: log_id } },
-          { new: true }
-        );
+        let member;
+        if (society.logs[0].kind !== "Donation") {
+          society.expected_income -= society.logs[0].item.amount;
+          member = await Member.findOneAndUpdate(
+            { _id: track.member._id },
+            { arrears: track.member.arrears, $pull: { logs: log_id } },
+            { new: true }
+          );
 
-        await Society.findByIdAndUpdate(society._id, {
-          $pull: { logs: log_id },
-          $push: { removed_logs: log_id },
-          expected_income: society.expected_income,
-          current_income: society.current_income,
+          await Society.findByIdAndUpdate(society._id, {
+            $pull: { logs: log_id },
+            $push: { removed_logs: log_id },
+            expected_income: society.expected_income,
+            current_income: society.current_income,
+          });
+        } else if (society.logs[0].kind === "Donation") {
+          member = await Member.findOneAndUpdate(
+            { _id: track.member._id },
+            { $inc: { donations: -society.logs[0].item.amount }, $pull: { logs: log_id } },
+            { new: true }
+          );
+
+          await Society.findByIdAndUpdate(society._id, {
+            $pull: { logs: log_id },
+            $push: { removed_logs: log_id },
+            $inc: { donations: -society.logs[0].item.amount },
+          });
+        }
+        pubSub.publish(`member:members|society(${society._id})`, {
+          listenSocietyMembers: { member: member, type: "PUT" },
         });
-      } else if (society.logs[0].kind === "Donation") {
-        society.donations -= society.logs[0].item.amount;
-        member = await Member.findOneAndUpdate(
-          { _id: track.member._id },
-          { $inc: { donations: -society.logs[0].item.amount }, $pull: { logs: log_id } },
-          { new: true }
-        );
-
-        await Society.findByIdAndUpdate(society._id, {
-          $pull: { logs: log_id },
-          $push: { removed_logs: log_id },
-          $inc: { donations: -society.logs[0].item.amount },
-        });
-      }
-      pubSub.publish(`member:members|society(${society._id})`, {
-        listenSocietyMembers: { member: member, type: "PUT" },
       });
-    });
+    } else if (society.logs[0].kind === "Donation") {
+      await Society.findByIdAndUpdate(society._id, {
+        $pull: { logs: log_id },
+        $push: { removed_logs: log_id },
+        $inc: { donations: -society.logs[0].item.amount },
+      });
+    }
 
     await Log.findByIdAndUpdate(log_id, { is_removed: true });
 
@@ -951,7 +960,7 @@ const Mutation = {
           listenMemberFineOrRefinementLog: { log: society.logs[0], type: "DELETE" },
         }
       );
-    } else if (society.logs[0].kind === "Donation") {
+    } else if (society.logs[0].kind === "Donation" && society.logs[0].item.tracks.length) {
       pubSub.publish(`member:log:donation|member(${society.logs[0].item.tracks[0].member._id})`, {
         listenMemberDonationLog: { log: society.logs[0], type: "DELETE" },
       });
@@ -1206,6 +1215,56 @@ const Mutation = {
       listenMemberDonationLog: { log: log, type: "POST" },
     });
     // pubSub.publish(`member:members|society(${society._id})`, { listenSocietyMembers: { member: member, type: "PUT" } });
+
+    return log;
+  },
+
+  addReceivedDonationBySociety: async (
+    parent,
+    { donationInput: { donation, description } },
+    { pubSub, request },
+    info
+  ) => {
+    console.log({ emitted: "addReceivedDonationBySociety" });
+
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (userData.category !== "society") {
+      const error = new Error("only society can edit payments!");
+      error.code = 401;
+      throw error;
+    }
+
+    const society = await Society.findById(userData.encryptedId);
+    if (!society) {
+      const error = new Error("society doesn't exist!");
+      error.code = 403;
+      throw error;
+    }
+
+    const donationObj = new Donation({
+      amount: donation,
+      description: description,
+      date: new Date(),
+      tracks: [],
+    });
+
+    await donationObj.save();
+
+    const log = new Log({ kind: "Donation", item: donationObj });
+    await log.save();
+
+    society.logs.push(log);
+    society.donations ? (society.donations += donation) : (society.donations = donation);
+    await society.save();
+
+    log.fee = log.item;
 
     return log;
   },
