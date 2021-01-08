@@ -1,5 +1,6 @@
 const validator = require("validator");
 const bcrypt = require("bcryptjs");
+const sgMail = require("@sendgrid/mail");
 
 const cloudFile = require("../util/cloud-file");
 import getUserData from "../middleware/auth";
@@ -148,6 +149,15 @@ const Mutation = {
     pubSub.publish(`developer:societies`, {
       listenSociety: { society: createdSociety, type: "POST" },
     });
+
+    const msg = {
+      to: societyInput.email,
+      from: "freedom-sms@support.com",
+      subject: "Society management system.",
+      html: `<strong>Account successfully created (${societyInput.name})!</strong>`,
+    };
+
+    sgMail.send(msg);
 
     return createdSociety._doc;
   },
@@ -370,6 +380,15 @@ const Mutation = {
     pubSub.publish(`society:members|society(${existingSociety._id})`, {
       listenSocietyMembersBySociety: { member: createdMember, type: "POST" },
     });
+
+    const msg = {
+      to: memberInput.email,
+      from: "freedom-sms@support.com",
+      subject: "Society management system.",
+      html: `<strong>Account successfully created (${memberInput.name})!</strong>`,
+    };
+
+    sgMail.send(msg);
 
     return createdMember._doc;
   },

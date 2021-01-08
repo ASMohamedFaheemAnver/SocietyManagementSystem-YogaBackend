@@ -8,8 +8,11 @@ import Developer from "./model/developer";
 
 const path = require("path");
 const fs = require("fs");
+const sgMail = require("@sendgrid/mail");
 
 const pubSub = new PubSub();
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const server = new GraphQLServer({
   typeDefs: "./src/schema.graphql",
