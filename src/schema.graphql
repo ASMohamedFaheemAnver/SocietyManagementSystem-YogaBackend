@@ -183,6 +183,8 @@ type Mutation {
   addSocietyExpense(expenseInput: SocietyExpenseInputData!): SocietyLog!
   requestMemberPasswordReset(email: String!): Message!
   memberPasswordReset(password: String!, token: String!): Message!
+  requestSocietyPasswordReset(email: String!): Message!
+  societyPasswordReset(password: String!, token: String!): Message!
 }
 
 type Subscription {

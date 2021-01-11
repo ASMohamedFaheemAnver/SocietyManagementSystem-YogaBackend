@@ -1487,6 +1487,80 @@ const Mutation = {
 
     return { message: "password reset mail was send!" };
   },
+
+  requestSocietyPasswordReset: async (parent, { email }, { request, pubSub }, info) => {
+    if (!validator.isEmail(email)) {
+      const error = new Error("please check the email!");
+      error.code = 401;
+      throw error;
+    }
+
+    const society = await Society.findOne({ email: email });
+
+    if (!society) {
+      const error = new Error("no account with that email!");
+      error.code = 401;
+      throw error;
+    }
+
+    const buffer = crypto.randomBytes(32);
+    const token = buffer.toString("hex");
+
+    society.reset_token = token;
+    society.reset_token_expiration = Date.now() + 3600000;
+
+    await society.save();
+
+    const msg = {
+      to: society.email,
+      from: {
+        // name: "CodersAuthority",
+        email: "freedom-sms@support.com",
+      },
+      subject: "Society management system password reset.",
+      templateId: "d-f69dc81d9d6e4fffac27a8c2d560b20e",
+      dynamicTemplateData: {
+        password_reset_url: `${process.env.client_auth_link}?user_category=society&reset_token=${token}`,
+      },
+    };
+
+    sgMail
+      .send(msg)
+      .then((res) => {
+        console.log({
+          emitted: "sgMail.then",
+        });
+      })
+      .catch((err) => {
+        console.log({
+          emitted: "sgMail.catch",
+          err: err,
+        });
+      });
+
+    return { message: "password reset mail was send!" };
+  },
+
+  societyPasswordReset: async (parent, { password, token }, { request, pubSub }, info) => {
+    const society = await Society.findOne({
+      reset_token: token,
+      reset_token_expiration: { $gt: Date.now() },
+    });
+
+    if (!society) {
+      const error = new Error("invalid token!");
+      error.code = 401;
+      throw error;
+    }
+    const hash = await bcrypt.hash(password, 12);
+    society.password = hash;
+    society.reset_token = undefined;
+    society.reset_token_expiration = undefined;
+
+    await society.save();
+
+    return { message: "password reset mail was send!" };
+  },
 };
 
 export { Mutation as default };
