@@ -71,6 +71,12 @@ const societySchema = new Schema(
     removed_members: [{ type: Schema.Types.ObjectId, ref: "Member" }],
     logs: [{ type: Schema.Types.ObjectId, ref: "Log" }],
     removed_logs: [{ type: Schema.Types.ObjectId, ref: "Log" }],
+    reset_token: {
+      type: String,
+    },
+    reset_token_expiration: {
+      type: Date,
+    },
   },
   { timestamps: true }
 );
