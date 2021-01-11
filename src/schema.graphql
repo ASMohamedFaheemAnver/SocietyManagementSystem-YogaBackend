@@ -181,6 +181,8 @@ type Mutation {
   updateMemberProfile(memberProfileInput: MemberProfileInputData!): Message!
   addReceivedDonationBySociety(donationInput: SocietyDonationInputData!): SocietyLog!
   addSocietyExpense(expenseInput: SocietyExpenseInputData!): SocietyLog!
+  requestMemberPasswordReset(email: String!): Message!
+  memberPasswordReset(password: String!, token: String!): Message!
 }
 
 type Subscription {

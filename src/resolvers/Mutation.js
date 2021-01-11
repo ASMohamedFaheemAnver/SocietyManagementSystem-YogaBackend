@@ -1,6 +1,7 @@
 const validator = require("validator");
 const bcrypt = require("bcryptjs");
 const sgMail = require("@sendgrid/mail");
+const crypto = require("crypto");
 
 const cloudFile = require("../util/cloud-file");
 import getUserData from "../middleware/auth";
@@ -154,7 +155,7 @@ const Mutation = {
       to: societyInput.email,
       from: "freedom-sms@support.com",
       subject: "Society management system.",
-      html: `<strong>Account successfully created (${societyInput.name})!</strong>`,
+      templateId: "d-27f5aeb6f1ba4cf18ae87c1f7633b294",
     };
 
     sgMail.send(msg);
@@ -384,8 +385,7 @@ const Mutation = {
     const msg = {
       to: memberInput.email,
       from: "freedom-sms@support.com",
-      subject: "Society management system.",
-      html: `<strong>Account successfully created (${memberInput.name})!</strong>`,
+      templateId: "d-27f5aeb6f1ba4cf18ae87c1f7633b294",
     };
 
     sgMail.send(msg);
@@ -1412,6 +1412,80 @@ const Mutation = {
     });
 
     return { message: "member removed successfly!" };
+  },
+
+  requestMemberPasswordReset: async (parent, { email }, { request, pubSub }, info) => {
+    if (!validator.isEmail(email)) {
+      const error = new Error("please check the email!");
+      error.code = 401;
+      throw error;
+    }
+
+    const member = await Member.findOne({ email: email });
+
+    if (!member) {
+      const error = new Error("no account with that email!");
+      error.code = 401;
+      throw error;
+    }
+
+    const buffer = crypto.randomBytes(32);
+    const token = buffer.toString("hex");
+
+    member.reset_token = token;
+    member.reset_token_expiration = Date.now() + 3600000;
+
+    await member.save();
+
+    const msg = {
+      to: member.email,
+      from: {
+        // name: "CodersAuthority",
+        email: "freedom-sms@support.com",
+      },
+      subject: "Society management system password reset.",
+      templateId: "d-f69dc81d9d6e4fffac27a8c2d560b20e",
+      dynamicTemplateData: {
+        password_reset_url: `${process.env.client_auth_link}?user_category=member&reset_token=${token}`,
+      },
+    };
+
+    sgMail
+      .send(msg)
+      .then((res) => {
+        console.log({
+          emitted: "sgMail.then",
+        });
+      })
+      .catch((err) => {
+        console.log({
+          emitted: "sgMail.catch",
+          err: err,
+        });
+      });
+
+    return { message: "password reset mail was send!" };
+  },
+
+  memberPasswordReset: async (parent, { password, token }, { request, pubSub }, info) => {
+    const member = await Member.findOne({
+      reset_token: token,
+      reset_token_expiration: { $gt: Date.now() },
+    });
+
+    if (!member) {
+      const error = new Error("invalid token!");
+      error.code = 401;
+      throw error;
+    }
+    const hash = await bcrypt.hash(password, 12);
+    member.password = hash;
+    member.reset_token = undefined;
+    member.reset_token_expiration = undefined;
+
+    await member.save();
+
+    return { message: "password reset mail was send!" };
   },
 };
 
