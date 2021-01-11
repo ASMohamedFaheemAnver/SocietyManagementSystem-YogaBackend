@@ -52,6 +52,12 @@ const memberSchema = new Schema(
       type: String,
       required: true,
     },
+    reset_token: {
+      type: String,
+    },
+    reset_token_expiration: {
+      type: Date,
+    },
     society: { type: Schema.Types.ObjectId, ref: "Society" },
     logs: [{ type: Schema.Types.ObjectId, ref: "Log" }],
   },
