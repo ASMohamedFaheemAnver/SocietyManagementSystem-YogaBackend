@@ -22,10 +22,6 @@ const server = new GraphQLServer({
     Subscription,
   },
   context(request) {
-    (function sleep(ms = 600) {
-      var unixtime_ms = new Date().getTime();
-      while (new Date().getTime() < unixtime_ms + ms) {}
-    })();
     return { pubSub, request };
   },
 });
