@@ -299,6 +299,10 @@ const Mutation = {
       listenSocietyMembersBySociety: { member: member, type: "PUT" },
     });
 
+    pubSub.publish(`member:members|society(${member.society})`, {
+      listenSocietyMembers: { member: member, type: "PUT" },
+    });
+
     pubSub.publish(`society:member|society(${member.society}):member(${member._id})`, {
       listenMemberById: { member: member, type: "PUT" },
     });
