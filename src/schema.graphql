@@ -1,4 +1,5 @@
 scalar Upload
+scalar Date
 
 type Message {
   message: String!
@@ -34,7 +35,7 @@ type Track {
 type Fee {
   _id: ID!
   amount: Int!
-  date: String!
+  date: Date!
   description: String!
   tracks: [Track!]!
 }
