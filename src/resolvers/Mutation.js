@@ -70,6 +70,10 @@ const Mutation = {
 
   createSociety: async (parent, { societyInput }, { request, pubSub }, info) => {
     console.log({ emitted: "createSociety" });
+
+    const image = await societyInput.image;
+    const { createReadStream, filename, mimetype, encoding } = image;
+
     const errors = [];
     if (!validator.isEmail(societyInput.email)) {
       errors.push({ message: "email is invalid!" });
@@ -99,6 +103,7 @@ const Mutation = {
       const error = new Error("invalid data submission!");
       error.data = errors;
       error.code = 422;
+      createReadStream().destroy();
       throw error;
     }
 
@@ -121,10 +126,10 @@ const Mutation = {
         "society already associated witha a email, name, or registration number!"
       );
       error.code = 403;
+      createReadStream().destroy();
       throw error;
     }
 
-    const image = await societyInput.image;
     societyInput.imageUrl = await cloudFile.uploadImageToCloud(image);
     if (!societyInput.imageUrl) {
       const error = new Error("cannot upload your image!");
@@ -168,15 +173,20 @@ const Mutation = {
 
     const userData = getUserData(request);
 
+    const image = await societyProfileInput.image;
+    const { createReadStream, filename, mimetype, encoding } = image;
+
     if (!userData) {
       const error = new Error("not authenticated!");
       error.code = 401;
+      createReadStream().destroy();
       throw error;
     }
 
     if (userData.category !== "society") {
       const error = new Error("only society can edit it's profile!");
       error.code = 401;
+      createReadStream().destroy();
       throw error;
     }
 
@@ -206,10 +216,9 @@ const Mutation = {
       const error = new Error("invalid data submission!");
       error.data = errors;
       error.code = 422;
+      createReadStream().destroy();
       throw error;
     }
-
-    const image = await societyProfileInput.image;
 
     if (image !== "undefined") {
       societyProfileInput.imageUrl = await cloudFile.uploadImageToCloud(image);
@@ -241,15 +250,20 @@ const Mutation = {
 
     const userData = getUserData(request);
 
+    const image = await memberProfileInput.image;
+    const { createReadStream, filename, mimetype, encoding } = image;
+
     if (!userData) {
       const error = new Error("not authenticated!");
       error.code = 401;
+      createReadStream().destroy();
       throw error;
     }
 
     if (userData.category !== "member") {
       const error = new Error("only member can edit his profile!");
       error.code = 401;
+      createReadStream().destroy();
       throw error;
     }
 
@@ -273,10 +287,9 @@ const Mutation = {
       const error = new Error("invalid data submission!");
       error.data = errors;
       error.code = 422;
+      createReadStream().destroy();
       throw error;
     }
-
-    const image = await memberProfileInput.image;
 
     if (image !== "undefined") {
       memberProfileInput.imageUrl = await cloudFile.uploadImageToCloud(image);
@@ -313,6 +326,9 @@ const Mutation = {
   createMember: async (parent, { memberInput }, { request, pubSub }, info) => {
     console.log({ emitted: "createMember" });
 
+    const image = await memberInput.image;
+    const { createReadStream, filename, mimetype, encoding } = image;
+
     const errors = [];
     if (!validator.isEmail(memberInput.email)) {
       errors.push({ message: "email is invalid!" });
@@ -336,6 +352,7 @@ const Mutation = {
       const error = new Error("invalid data submission!");
       error.data = errors;
       error.code = 422;
+      createReadStream().destroy();
       throw error;
     }
 
@@ -344,6 +361,7 @@ const Mutation = {
     if (!existingSociety) {
       const error = new Error("society not exist!");
       error.code = 403;
+      createReadStream().destroy();
       throw error;
     }
 
@@ -354,10 +372,10 @@ const Mutation = {
     if (existingMember) {
       const error = new Error("member already exist!");
       error.code = 403;
+      createReadStream().destroy();
       throw error;
     }
 
-    const image = await memberInput.image;
     memberInput.imageUrl = await cloudFile.uploadImageToCloud(image);
 
     if (!memberInput.imageUrl) {
