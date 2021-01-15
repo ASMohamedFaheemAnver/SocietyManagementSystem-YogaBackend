@@ -1371,8 +1371,8 @@ const Mutation = {
     return log;
   },
 
-  deleteSocietyMember: async (parent, { member_id }, { request, pubSub }, info) => {
-    console.log({ emitted: "deleteSocietyMember" });
+  removeSocietyMember: async (parent, { member_id }, { request, pubSub }, info) => {
+    console.log({ emitted: "removeSocietyMember" });
 
     const userData = getUserData(request);
 
@@ -1432,6 +1432,58 @@ const Mutation = {
     pubSub.publish(`member:members|society(${userData.encryptedId})`, {
       listenSocietyMembers: { member: member, type: "DELETE" },
     });
+
+    return { message: "member removed successfly!" };
+  },
+
+  deleteSocietyMember: async (parent, { member_id }, { request, pubSub }, info) => {
+    console.log({ emitted: "deleteSocietyMember" });
+
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (userData.category !== "society") {
+      const error = new Error("only society can remove member!");
+      error.code = 401;
+      throw error;
+    }
+
+    const society = await Society.findById(userData.encryptedId);
+    if (!society) {
+      const error = new Error("society doesn't exist!");
+      error.code = 403;
+      throw error;
+    }
+
+    const member = await Member.findOne({ _id: member_id, approved: false });
+
+    if (!member) {
+      const error = new Error("member can't be deleted!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (member.society.toString() !== society._id.toString()) {
+      const error = new Error("only society can remove it's member!");
+      error.code = 401;
+      throw error;
+    }
+
+    await member.delete();
+
+    cloudFile.deleteImageFromCloud(member.imageUrl);
+
+    const societyUpdateResult = await Society.updateOne(
+      { _id: userData.encryptedId },
+      {
+        $pull: { members: member_id },
+      }
+    );
 
     return { message: "member removed successfly!" };
   },
