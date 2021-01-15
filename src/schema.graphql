@@ -178,6 +178,7 @@ type Mutation {
   editFeeForEveryone(log_id: ID!, fee: Int!, description: String!): SocietyLog!
   deleteFeeLog(log_id: ID!): Message!
   deleteSocietyMember(member_id: ID!): Message!
+  removeSocietyMember(member_id: ID!): Message!
   updateSocietyProfile(societyProfileInput: SocietyProfileInputData!): Message!
   updateMemberProfile(memberProfileInput: MemberProfileInputData!): Message!
   addReceivedDonationBySociety(donationInput: SocietyDonationInputData!): SocietyLog!
