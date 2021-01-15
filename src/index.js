@@ -51,7 +51,7 @@ mongoose
       }
     });
 
-    server.start({ port: process.env.PORT || 3000 }, () => {
+    server.start({ port: process.env.PORT || 3000, subscriptions: { keepAlive: 30000 } }, () => {
       console.log("Server is up and running!");
     });
   })
