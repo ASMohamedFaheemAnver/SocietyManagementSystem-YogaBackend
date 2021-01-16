@@ -997,6 +997,11 @@ const Mutation = {
         $push: { removed_logs: log_id },
         $inc: { expenses: -society.logs[0].item.amount },
       });
+    } else if (society.logs[0].kind === "RefinementFee") {
+      await Society.findByIdAndUpdate(society._id, {
+        $pull: { logs: log_id },
+        $push: { removed_logs: log_id },
+      });
     }
 
     await Log.findByIdAndUpdate(log_id, { is_removed: true });
@@ -1006,12 +1011,14 @@ const Mutation = {
         listenCommonMemberLog: { log: society.logs[0], type: "DELETE" },
       });
     } else if (society.logs[0].kind === "Fine" || society.logs[0].kind === "RefinementFee") {
-      pubSub.publish(
-        `member:log:(fine|refinement)|member(${society.logs[0].item.tracks[0].member._id})`,
-        {
-          listenMemberFineOrRefinementLog: { log: society.logs[0], type: "DELETE" },
-        }
-      );
+      if (society.logs[0].item.tracks[0]) {
+        pubSub.publish(
+          `member:log:(fine|refinement)|member(${society.logs[0].item.tracks[0].member._id})`,
+          {
+            listenMemberFineOrRefinementLog: { log: society.logs[0], type: "DELETE" },
+          }
+        );
+      }
     } else if (society.logs[0].kind === "Donation" && society.logs[0].item.tracks.length) {
       pubSub.publish(`member:log:donation|member(${society.logs[0].item.tracks[0].member._id})`, {
         listenMemberDonationLog: { log: society.logs[0], type: "DELETE" },
@@ -1185,6 +1192,55 @@ const Mutation = {
     pubSub.publish(`member:members|society(${society._id})`, {
       listenSocietyMembers: { member: member, type: "PUT" },
     });
+
+    return log;
+  },
+
+  addRefinementFeeForSociety: async (
+    parent,
+    { refinementFee, description },
+    { pubSub, request },
+    info
+  ) => {
+    console.log({ emitted: "addRefinementFeeForSociety" });
+
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (userData.category !== "society") {
+      const error = new Error("only society can edit payments!");
+      error.code = 401;
+      throw error;
+    }
+
+    const society = await Society.findById(userData.encryptedId);
+    if (!society) {
+      const error = new Error("society doesn't exist!");
+      error.code = 403;
+      throw error;
+    }
+
+    const refinementFeeObj = new RefinementFee({
+      amount: refinementFee,
+      description: description,
+      date: new Date(),
+      tracks: [],
+    });
+
+    await refinementFeeObj.save();
+
+    const log = new Log({ kind: "RefinementFee", item: refinementFeeObj });
+    await log.save();
+
+    society.logs.push(log);
+    await society.save();
+
+    log.fee = log.item;
 
     return log;
   },
