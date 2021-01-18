@@ -130,7 +130,7 @@ const Mutation = {
       throw error;
     }
 
-    societyInput.imageUrl = await cloudFile.uploadImageToCloud(image);
+    societyInput.imageUrl = await cloudFile.uploadImageToCloud(image, "society");
     if (!societyInput.imageUrl) {
       const error = new Error("cannot upload your image!");
       error.data = errors;
@@ -221,7 +221,7 @@ const Mutation = {
     }
 
     if (image !== "undefined") {
-      societyProfileInput.imageUrl = await cloudFile.uploadImageToCloud(image);
+      societyProfileInput.imageUrl = await cloudFile.uploadImageToCloud(image, "society");
     }
 
     const society = await Society.findById(userData.encryptedId);
@@ -292,7 +292,7 @@ const Mutation = {
     }
 
     if (image !== "undefined") {
-      memberProfileInput.imageUrl = await cloudFile.uploadImageToCloud(image);
+      memberProfileInput.imageUrl = await cloudFile.uploadImageToCloud(image, "society");
     }
 
     const member = await Member.findById(userData.encryptedId);
@@ -376,7 +376,7 @@ const Mutation = {
       throw error;
     }
 
-    memberInput.imageUrl = await cloudFile.uploadImageToCloud(image);
+    memberInput.imageUrl = await cloudFile.uploadImageToCloud(image, "member");
 
     if (!memberInput.imageUrl) {
       const error = new Error("cannot upload your image!");

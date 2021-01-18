@@ -20,11 +20,12 @@ const bucket = admin.storage().bucket();
 
 const bucketUrl = `https://storage.googleapis.com/${bucket.name}/`;
 
-const uploadImageToCloud = async (image) => {
+const uploadImageToCloud = async (image, category) => {
   let path;
   try {
     path = await localFile.uploadImageToLocal(image);
     const res = await bucket.upload(path.imagePath, {
+      destination: `${category}/${path.filePath}`,
       gzip: true,
       metadata: metadata,
     });
@@ -33,7 +34,7 @@ const uploadImageToCloud = async (image) => {
     return false;
   }
 
-  const imageUrl = bucketUrl + path.filePath;
+  const imageUrl = bucketUrl + `${category}/${path.filePath}`;
 
   // console.log({ imageUrl: imageUrl });
   return imageUrl;
