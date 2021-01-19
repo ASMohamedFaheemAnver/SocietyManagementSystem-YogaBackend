@@ -8,8 +8,13 @@ const Developer = require("../model/developer");
 const Subscription = {
   listenCommonMemberLog: {
     subscribe: async (parent, args, { request, pubSub }, info) => {
-      console.log({ emitted: "listenCommonMemberLog.subscribe" });
       const userData = getUserData(request);
+      console.log({
+        emitted: "listenCommonMemberLog.subscribe",
+        id: userData.encryptedId,
+        category: userData.category,
+      });
+
       const member = await Member.findById(userData.encryptedId);
       if (!member) {
         const error = new Error("member doesn't exist!");
@@ -17,7 +22,11 @@ const Subscription = {
         throw error;
       }
       return withCancel(pubSub.asyncIterator(`member:log|society(${member.society})`), () => {
-        console.log({ emitted: "listenCommonMemberLog.unSubscribe" });
+        console.log({
+          emitted: "listenCommonMemberLog.unSubscribe",
+          id: userData.encryptedId,
+          category: userData.category,
+        });
       });
     },
     resolve: (payload, args, context, info) => {
@@ -27,8 +36,12 @@ const Subscription = {
 
   listenMemberFineOrRefinementLog: {
     subscribe: async (parent, args, { request, pubSub }, info) => {
-      console.log({ emitted: "listenMemberFineOrRefinementLog.subscribe" });
       const userData = getUserData(request);
+      console.log({
+        emitted: "listenMemberFineOrRefinementLog.subscribe",
+        id: userData.encryptedId,
+        category: userData.category,
+      });
       const member = await Member.findById(userData.encryptedId);
       if (!member) {
         const error = new Error("member doesn't exist!");
@@ -38,7 +51,11 @@ const Subscription = {
       return withCancel(
         pubSub.asyncIterator(`member:log:(fine|refinement)|member(${member._id})`),
         () => {
-          console.log({ emitted: "listenMemberFineOrRefinementLog.unSubscribe" });
+          console.log({
+            emitted: "listenMemberFineOrRefinementLog.unSubscribe",
+            id: userData.encryptedId,
+            category: userData.category,
+          });
         }
       );
     },
@@ -49,8 +66,13 @@ const Subscription = {
 
   listenMemberDonationLog: {
     subscribe: async (parent, args, { request, pubSub }, info) => {
-      console.log({ emitted: "listenMemberDonationLog.subscribe" });
       const userData = getUserData(request);
+
+      console.log({
+        emitted: "listenMemberDonationLog.subscribe",
+        id: userData.encryptedId,
+        category: userData.category,
+      });
       const member = await Member.findById(userData.encryptedId);
       if (!member) {
         const error = new Error("member doesn't exist!");
@@ -58,7 +80,11 @@ const Subscription = {
         throw error;
       }
       return withCancel(pubSub.asyncIterator(`member:log:donation|member(${member._id})`), () => {
-        console.log({ emitted: "listenMemberDonationLog.unSubscribe" });
+        console.log({
+          emitted: "listenMemberDonationLog.unSubscribe",
+          id: userData.encryptedId,
+          category: userData.category,
+        });
       });
     },
     resolve: (payload, args, context, info) => {
@@ -68,8 +94,12 @@ const Subscription = {
 
   listenMemberLogTrack: {
     subscribe: async (parent, args, { request, pubSub }, info) => {
-      console.log({ emitted: "listenMemberLogTrack.subscribe" });
       const userData = getUserData(request);
+      console.log({
+        emitted: "listenMemberLogTrack.subscribe",
+        id: userData.encryptedId,
+        category: userData.category,
+      });
       const member = await Member.findById(userData.encryptedId);
 
       if (!member) {
@@ -81,7 +111,11 @@ const Subscription = {
       return withCancel(
         pubSub.asyncIterator(`member:log:track|society(${member.society})&member(${member._id})`),
         () => {
-          console.log({ emitted: "listenMemberLogTrack.unSubscribe" });
+          console.log({
+            emitted: "listenMemberLogTrack.unSubscribe",
+            id: userData.encryptedId,
+            category: userData.category,
+          });
         }
       );
     },
@@ -92,8 +126,13 @@ const Subscription = {
 
   listenSocietyMembers: {
     subscribe: async (parent, args, context, info) => {
-      console.log({ emitted: "listenSocietyMembers.subscribe" });
       const userData = getUserData(context.request);
+
+      console.log({
+        emitted: "listenSocietyMembers.subscribe",
+        id: userData.encryptedId,
+        category: userData.category,
+      });
       const member = await Member.findById(userData.encryptedId);
 
       if (!member) {
@@ -107,7 +146,11 @@ const Subscription = {
           return withCancel(
             context.pubSub.asyncIterator(`member:members|society(${member.society})`),
             () => {
-              console.log({ emitted: "listenSocietyMembers.unSubscribe" });
+              console.log({
+                emitted: "listenSocietyMembers.unSubscribe",
+                id: userData.encryptedId,
+                category: userData.category,
+              });
             }
           );
         },
@@ -129,8 +172,12 @@ const Subscription = {
 
   listenSocietyMembersBySociety: {
     subscribe: async (parent, args, { request, pubSub }, info) => {
-      console.log({ emitted: "listenSocietyMembersBySociety.subscribe" });
       const userData = getUserData(request);
+      console.log({
+        emitted: "listenSocietyMembersBySociety.subscribe",
+        id: userData.encryptedId,
+        category: userData.category,
+      });
       const society = await Society.findById(userData.encryptedId);
 
       if (!society) {
@@ -140,7 +187,11 @@ const Subscription = {
       }
 
       return withCancel(pubSub.asyncIterator(`society:members|society(${society._id})`), () => {
-        console.log({ emitted: "listenSocietyMembersBySociety.unSubscribe" });
+        console.log({
+          emitted: "listenSocietyMembersBySociety.unSubscribe",
+          id: userData.encryptedId,
+          category: userData.category,
+        });
       });
     },
     resolve: (payload, args, context, info) => {
@@ -150,8 +201,12 @@ const Subscription = {
 
   listenSociety: {
     subscribe: async (parent, args, { request, pubSub }, info) => {
-      console.log({ emitted: "listenSociety.subscribe" });
       const userData = getUserData(request);
+      console.log({
+        emitted: "listenSociety.subscribe",
+        id: userData.encryptedId,
+        category: userData.category,
+      });
       const developer = await Developer.findById(userData.encryptedId);
 
       if (!developer) {
@@ -161,7 +216,11 @@ const Subscription = {
       }
 
       return withCancel(pubSub.asyncIterator(`developer:societies`), () => {
-        console.log({ emitted: "listenSociety.unSubscribe" });
+        console.log({
+          emitted: "listenSociety.unSubscribe",
+          id: userData.encryptedId,
+          category: userData.category,
+        });
       });
     },
     resolve: (payload, args, context, info) => {
@@ -171,8 +230,12 @@ const Subscription = {
 
   listenMemberById: {
     subscribe: async (parent, { member_id }, { request, pubSub }, info) => {
-      console.log({ emitted: "listenMemberById.subscribe" });
       const userData = getUserData(request);
+      console.log({
+        emitted: "listenMemberById.subscribe",
+        id: userData.encryptedId,
+        category: userData.category,
+      });
       const society = await Society.findById(userData.encryptedId);
 
       if (!society) {
@@ -184,7 +247,11 @@ const Subscription = {
       return withCancel(
         pubSub.asyncIterator(`society:member|society(${society._id}):member(${member_id})`),
         () => {
-          console.log({ emitted: "listenMemberById.unSubscribe" });
+          console.log({
+            emitted: "listenMemberById.unSubscribe",
+            id: userData.encryptedId,
+            category: userData.category,
+          });
         }
       );
     },
