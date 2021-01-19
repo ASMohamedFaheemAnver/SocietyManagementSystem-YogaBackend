@@ -1,4 +1,5 @@
 import getUserData from "../middleware/auth";
+import { withFilter } from "graphql-yoga";
 
 const Member = require("../model/member");
 const Society = require("../model/society");
@@ -7,7 +8,7 @@ const Developer = require("../model/developer");
 const Subscription = {
   listenCommonMemberLog: {
     subscribe: async (parent, args, { request, pubSub }, info) => {
-      console.log({ emitted: "listenCommonMemberLog" });
+      console.log({ emitted: "listenCommonMemberLog.subscribe" });
       const userData = getUserData(request);
       const member = await Member.findById(userData.encryptedId);
       if (!member) {
@@ -26,7 +27,7 @@ const Subscription = {
 
   listenMemberFineOrRefinementLog: {
     subscribe: async (parent, args, { request, pubSub }, info) => {
-      console.log({ emitted: "listenMemberFineOrRefinementLog" });
+      console.log({ emitted: "listenMemberFineOrRefinementLog.subscribe" });
       const userData = getUserData(request);
       const member = await Member.findById(userData.encryptedId);
       if (!member) {
@@ -48,7 +49,7 @@ const Subscription = {
 
   listenMemberDonationLog: {
     subscribe: async (parent, args, { request, pubSub }, info) => {
-      console.log({ emitted: "listenMemberDonationLog" });
+      console.log({ emitted: "listenMemberDonationLog.subscribe" });
       const userData = getUserData(request);
       const member = await Member.findById(userData.encryptedId);
       if (!member) {
@@ -67,7 +68,7 @@ const Subscription = {
 
   listenMemberLogTrack: {
     subscribe: async (parent, args, { request, pubSub }, info) => {
-      console.log({ emitted: "listenMemberLogTrack" });
+      console.log({ emitted: "listenMemberLogTrack.subscribe" });
       const userData = getUserData(request);
       const member = await Member.findById(userData.encryptedId);
 
@@ -90,9 +91,9 @@ const Subscription = {
   },
 
   listenSocietyMembers: {
-    subscribe: async (parent, args, { request, pubSub }, info) => {
-      console.log({ emitted: "listenSocietyMembers" });
-      const userData = getUserData(request);
+    subscribe: async (parent, args, context, info) => {
+      console.log({ emitted: "listenSocietyMembers.subscribe" });
+      const userData = getUserData(context.request);
       const member = await Member.findById(userData.encryptedId);
 
       if (!member) {
@@ -101,9 +102,25 @@ const Subscription = {
         throw error;
       }
 
-      return withCancel(pubSub.asyncIterator(`member:members|society(${member.society})`), () => {
-        console.log({ emitted: "listenSocietyMembers.unSubscribe" });
-      });
+      return withFilter(
+        () => {
+          return withCancel(
+            context.pubSub.asyncIterator(`member:members|society(${member.society})`),
+            () => {
+              console.log({ emitted: "listenSocietyMembers.unSubscribe" });
+            }
+          );
+        },
+        (payload, args) => {
+          if (
+            payload.listenSocietyMembers.member._id.toString() === userData.encryptedId.toString()
+          ) {
+            return false;
+          }
+
+          return true;
+        }
+      )(parent, args, context, info);
     },
     resolve: (payload, args, context, info) => {
       return payload.listenSocietyMembers;
@@ -112,7 +129,7 @@ const Subscription = {
 
   listenSocietyMembersBySociety: {
     subscribe: async (parent, args, { request, pubSub }, info) => {
-      console.log({ emitted: "listenSocietyMembersBySociety" });
+      console.log({ emitted: "listenSocietyMembersBySociety.subscribe" });
       const userData = getUserData(request);
       const society = await Society.findById(userData.encryptedId);
 
@@ -133,7 +150,7 @@ const Subscription = {
 
   listenSociety: {
     subscribe: async (parent, args, { request, pubSub }, info) => {
-      console.log({ emitted: "listenSociety" });
+      console.log({ emitted: "listenSociety.subscribe" });
       const userData = getUserData(request);
       const developer = await Developer.findById(userData.encryptedId);
 
@@ -154,7 +171,7 @@ const Subscription = {
 
   listenMemberById: {
     subscribe: async (parent, { member_id }, { request, pubSub }, info) => {
-      console.log({ emitted: "listenMemberById" });
+      console.log({ emitted: "listenMemberById.subscribe" });
       const userData = getUserData(request);
       const society = await Society.findById(userData.encryptedId);
 
