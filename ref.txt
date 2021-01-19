@@ -11,3 +11,8 @@
 
 #Detect an unsubscribe in Apollo graphql server
 #https://stackoverflow.com/questions/56886412/detect-an-unsubscribe-in-apollo-graphql-server
+
+// Filtering subscriptions withFilter
+// https://stackoverflow.com/questions/57714995/prisma2-subscriptions-returns-data-null
+// https://www.youtube.com/watch?v=wR76VDYW6DY
+// https://github.com/apollographql/graphql-subscriptions/issues/161
