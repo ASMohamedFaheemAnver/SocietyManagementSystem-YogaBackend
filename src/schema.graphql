@@ -170,7 +170,7 @@ type Mutation {
     description: String!
     member_id: ID!
   ): SocietyLog!
-  addRefinementFeeForSociety(refinementFee: Int!, description: String!): SocietyLog!
+  addBankDepositForSociety(deposit_amount: Int!, description: String!): SocietyLog!
   addFineForOneMember(fineInput: FineInputData!): SocietyLog!
   addDonationForOneMember(donationInput: DonationInputData!): SocietyLog!
   makeFeePaidForOneMember(track_id: ID!, log_id: ID!): Message!

@@ -16,6 +16,7 @@ const Fine = require("../model/fine");
 const Donation = require("../model/donation");
 const Expense = require("../model/expense");
 const RefinementFee = require("../model/refinement-fee");
+const BankDeposit = require("../model/bank-deposit");
 
 const Mutation = {
   approveSociety: async (parent, { societyId }, { request }, info) => {
@@ -1196,13 +1197,13 @@ const Mutation = {
     return log;
   },
 
-  addRefinementFeeForSociety: async (
+  addBankDepositForSociety: async (
     parent,
-    { refinementFee, description },
+    { deposit_amount, description },
     { pubSub, request },
     info
   ) => {
-    console.log({ emitted: "addRefinementFeeForSociety" });
+    console.log({ emitted: "addBankDepositForSociety" });
 
     const userData = getUserData(request);
 
@@ -1225,19 +1226,21 @@ const Mutation = {
       throw error;
     }
 
-    const refinementFeeObj = new RefinementFee({
-      amount: refinementFee,
+    const banckDeposit = new BankDeposit({
+      amount: deposit_amount,
       description: description,
       date: new Date(),
       tracks: [],
     });
 
-    await refinementFeeObj.save();
+    await banckDeposit.save();
 
-    const log = new Log({ kind: "RefinementFee", item: refinementFeeObj });
+    const log = new Log({ kind: "BankDeposit", item: banckDeposit });
     await log.save();
 
     society.logs.push(log);
+    society.balance.bank += deposit_amount;
+    society.total_assets += deposit_amount;
     await society.save();
 
     log.fee = log.item;

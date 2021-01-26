@@ -63,6 +63,23 @@ const societySchema = new Schema(
       default: 0,
       required: true,
     },
+    total_assets: {
+      type: Number,
+      default: 0,
+      required: true,
+    },
+    balance: {
+      bank: {
+        type: Number,
+        default: 0,
+        required: true,
+      },
+      case: {
+        type: Number,
+        default: 0,
+        required: true,
+      },
+    },
     month_fee: {
       type: { description: String, amount: Number },
       default: { description: "Monthly fees.", amount: 100 },
