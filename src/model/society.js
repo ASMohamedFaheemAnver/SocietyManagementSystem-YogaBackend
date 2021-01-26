@@ -68,6 +68,13 @@ const societySchema = new Schema(
       default: 0,
       required: true,
     },
+    total: {
+      assets: {
+        type: Number,
+        default: 0,
+        required: true,
+      },
+    },
     balance: {
       bank: {
         type: Number,

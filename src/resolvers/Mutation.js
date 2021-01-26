@@ -17,6 +17,7 @@ const Donation = require("../model/donation");
 const Expense = require("../model/expense");
 const RefinementFee = require("../model/refinement-fee");
 const BankDeposit = require("../model/bank-deposit");
+const RecievedCase = require("../model/received-case");
 
 const Mutation = {
   approveSociety: async (parent, { societyId }, { request }, info) => {
@@ -1240,7 +1241,58 @@ const Mutation = {
 
     society.logs.push(log);
     society.balance.bank += deposit_amount;
-    society.total_assets += deposit_amount;
+    society.total.assets += deposit_amount;
+    await society.save();
+
+    log.fee = log.item;
+
+    return log;
+  },
+
+  addReceivedCaseForSociety: async (
+    parent,
+    { received_amount, description },
+    { pubSub, request },
+    info
+  ) => {
+    console.log({ emitted: "addReceivedCaseForSociety" });
+
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (userData.category !== "society") {
+      const error = new Error("only society can edit payments!");
+      error.code = 401;
+      throw error;
+    }
+
+    const society = await Society.findById(userData.encryptedId);
+    if (!society) {
+      const error = new Error("society doesn't exist!");
+      error.code = 403;
+      throw error;
+    }
+
+    const receivedCase = new RecievedCase({
+      amount: received_amount,
+      description: description,
+      date: new Date(),
+      tracks: [],
+    });
+
+    await receivedCase.save();
+
+    const log = new Log({ kind: "ReceivedCase", item: receivedCase });
+    await log.save();
+
+    society.logs.push(log);
+    society.balance.case += received_amount;
+    society.total.assets += received_amount;
     await society.save();
 
     log.fee = log.item;
