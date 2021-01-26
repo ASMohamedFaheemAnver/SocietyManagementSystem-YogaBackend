@@ -53,11 +53,6 @@ const societySchema = new Schema(
       type: Number,
       default: 0,
     },
-    donations: {
-      type: Number,
-      default: 0,
-      required: true,
-    },
     expenses: {
       type: Number,
       default: 0,
@@ -85,6 +80,13 @@ const societySchema = new Schema(
         type: Number,
         default: 0,
         required: true,
+      },
+    },
+    received: {
+      donations: {
+        type: Number,
+        default: 0,
+        // required: true,
       },
     },
     month_fee: {

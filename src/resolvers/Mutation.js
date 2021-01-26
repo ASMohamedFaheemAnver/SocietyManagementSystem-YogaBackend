@@ -1424,7 +1424,10 @@ const Mutation = {
     await log.save();
 
     society.logs.push(log);
-    society.donations ? (society.donations += donation) : (society.donations = donation);
+    society.received.donations += donation;
+    society.balance.case += donation;
+    society.total.assets += donation;
+
     await society.save();
 
     log.fee = log.item;
@@ -1670,7 +1673,7 @@ const Mutation = {
 
     await member.save();
 
-    return { message: "password reset mail was send!" };
+    return { message: "password was reset successfully!" };
   },
 
   requestSocietyPasswordReset: async (parent, { email }, { request, pubSub }, info) => {
@@ -1744,7 +1747,7 @@ const Mutation = {
 
     await society.save();
 
-    return { message: "password reset mail was send!" };
+    return { message: "password was reset successfully!" };
   },
 };
 
