@@ -86,6 +86,11 @@ const societySchema = new Schema(
       donations: {
         type: Number,
         default: 0,
+        required: true,
+      },
+      income: {
+        type: Number,
+        default: 0,
         // required: true,
       },
     },
