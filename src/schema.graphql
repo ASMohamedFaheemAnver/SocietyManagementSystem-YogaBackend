@@ -165,6 +165,8 @@ type Mutation {
   createMember(memberInput: MemberInputData!): Member!
   addMonthlyFeeToEveryone(monthlyFee: Int!, description: String!): SocietyLog!
   addExtraFeeToEveryone(extraFee: Int!, description: String!): SocietyLog!
+  addEntertainmentExpenseToEveryone(expense: Int!, description: String!): SocietyLog!
+  addOtherExpenseToEveryone(expense: Int!, description: String!): SocietyLog!
   addRefinementFeeForOneMember(
     refinementFee: Int!
     description: String!

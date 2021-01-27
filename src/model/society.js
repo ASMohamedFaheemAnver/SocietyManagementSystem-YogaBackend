@@ -64,6 +64,11 @@ const societySchema = new Schema(
         default: 0,
         required: true,
       },
+      entertainment: {
+        type: Number,
+        default: 0,
+        required: true,
+      },
       other: {
         type: Number,
         default: 0,
@@ -72,6 +77,11 @@ const societySchema = new Schema(
     },
     total: {
       assets: {
+        type: Number,
+        default: 0,
+        required: true,
+      },
+      receivables: {
         type: Number,
         default: 0,
         required: true,
@@ -96,6 +106,18 @@ const societySchema = new Schema(
         required: true,
       },
       income: {
+        type: Number,
+        default: 0,
+        // required: true,
+      },
+    },
+    receivable: {
+      monthly_subscriptions: {
+        type: Number,
+        default: 0,
+        // required: true,
+      },
+      extra_fees: {
         type: Number,
         default: 0,
         // required: true,

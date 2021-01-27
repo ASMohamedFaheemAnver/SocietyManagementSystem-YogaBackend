@@ -21,6 +21,7 @@ const RefinementFee = require("../model/refinement-fee");
 const BankDeposit = require("../model/bank-deposit");
 const RecievedCase = require("../model/received-case");
 const OtherIncome = require("../model/other-income");
+const EntertainmentExpense = require("../model/entertainment-expense");
 
 const Mutation = {
   approveSociety: async (parent, { societyId }, { request }, info) => {
@@ -493,6 +494,8 @@ const Mutation = {
     for (let i = 0; i < society.members.length; i++) {
       society.members[i].arrears += monthlyFee;
       society.expected_income += monthlyFee;
+      society.receivable.monthly_subscriptions += monthlyFee;
+      society.total.receivables += monthlyFee;
       society.members[i].logs.push(log);
       await society.members[i].save();
       const track = new Track({
@@ -571,6 +574,8 @@ const Mutation = {
       const member = await Member.findById(society.members[i]);
       member.arrears += extraFee;
       society.expected_income += extraFee;
+      society.receivable.extra_fees += extraFee;
+      society.total.receivables += extraFee;
       member.logs.push(log);
       const track = new Track({
         member: member,
@@ -584,6 +589,182 @@ const Mutation = {
     }
 
     await extraFeeObj.save();
+
+    society.logs.push(log);
+
+    await society.save();
+
+    log.fee = log.item;
+
+    // Emitting event to all observers but If we need to filter it, we can use `member(${member._id})`
+    pubSub.publish(`member:log|society(${society._id})`, {
+      listenCommonMemberLog: { log: log, type: "POST" },
+    });
+
+    return log;
+  },
+
+  addEntertainmentExpenseToEveryone: async (
+    parent,
+    { expense, description },
+    { request, pubSub },
+    info
+  ) => {
+    console.log({ emitted: "addEntertainmentExpenseToEveryone" });
+
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (userData.category !== "society") {
+      const error = new Error("only society can add fee to it's members!");
+      error.code = 401;
+      throw error;
+    }
+
+    const society = await Society.findById(userData.encryptedId).populate([
+      { path: "members", match: { approved: true, is_removed: false } },
+    ]);
+
+    if (!society) {
+      const error = new Error("society not found to add extra fee!");
+      error.code = 404;
+      throw error;
+    }
+
+    if (society.members.length < 1) {
+      const error = new Error("no member exist!");
+      error.code = 403;
+      throw error;
+    }
+
+    if (expense < 20) {
+      const error = new Error("extra fee should be more than 20!");
+      error.code = 403;
+      throw error;
+    }
+
+    const entertainmentExpense = new EntertainmentExpense({
+      amount: expense,
+      date: new Date(),
+      description: description,
+    });
+
+    const log = new Log({ kind: "EntertainmentExpense", item: entertainmentExpense });
+    await log.save();
+
+    for (let i = 0; i < society.members.length; i++) {
+      const member = await Member.findById(society.members[i]);
+      society.expenses.entertainment += expense;
+      society.total.case -= expense;
+      society.total.assets -= expense;
+
+      member.logs.push(log);
+      const track = new Track({
+        member: member,
+        is_paid: true,
+      });
+      await track.save();
+      entertainmentExpense.tracks.push(track);
+      await member.save();
+      pubSub.publish(`member:members|society(${society._id})`, {
+        listenSocietyMembers: { member: member, type: "PUT" },
+      });
+    }
+
+    await entertainmentExpense.save();
+
+    society.logs.push(log);
+
+    await society.save();
+
+    log.fee = log.item;
+
+    // Emitting event to all observers but If we need to filter it, we can use `member(${member._id})`
+    pubSub.publish(`member:log|society(${society._id})`, {
+      listenCommonMemberLog: { log: log, type: "POST" },
+    });
+
+    return log;
+  },
+
+  addOtherExpenseToEveryone: async (
+    parent,
+    { expense, description },
+    { request, pubSub },
+    info
+  ) => {
+    console.log({ emitted: "addOtherExpenseToEveryone" });
+
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (userData.category !== "society") {
+      const error = new Error("only society can add fee to it's members!");
+      error.code = 401;
+      throw error;
+    }
+
+    const society = await Society.findById(userData.encryptedId).populate([
+      { path: "members", match: { approved: true, is_removed: false } },
+    ]);
+
+    if (!society) {
+      const error = new Error("society not found to add extra fee!");
+      error.code = 404;
+      throw error;
+    }
+
+    if (society.members.length < 1) {
+      const error = new Error("no member exist!");
+      error.code = 403;
+      throw error;
+    }
+
+    if (expense < 20) {
+      const error = new Error("extra fee should be more than 20!");
+      error.code = 403;
+      throw error;
+    }
+
+    const otherExpense = new OtherExpense({
+      amount: expense,
+      date: new Date(),
+      description: description,
+    });
+
+    const log = new Log({ kind: "OtherExpense", item: otherExpense });
+    await log.save();
+
+    for (let i = 0; i < society.members.length; i++) {
+      const member = await Member.findById(society.members[i]);
+      society.expenses.other += expense;
+      society.total.case -= expense;
+      society.total.assets -= expense;
+
+      member.logs.push(log);
+      const track = new Track({
+        member: member,
+        is_paid: true,
+      });
+      await track.save();
+      otherExpense.tracks.push(track);
+      await member.save();
+      pubSub.publish(`member:members|society(${society._id})`, {
+        listenSocietyMembers: { member: member, type: "PUT" },
+      });
+    }
+
+    await otherExpense.save();
 
     society.logs.push(log);
 
