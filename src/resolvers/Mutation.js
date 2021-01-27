@@ -14,8 +14,9 @@ const Log = require("../model/log");
 const Track = require("../model/track");
 const Fine = require("../model/fine");
 const Donation = require("../model/donation");
-const Expense = require("../model/expense");
+const OtherExpense = require("../model/other-expense");
 const AdministrativeExpense = require("../model/administrative-expense");
+const EventExpense = require("../model/event-expense");
 const RefinementFee = require("../model/refinement-fee");
 const BankDeposit = require("../model/bank-deposit");
 const RecievedCase = require("../model/received-case");
@@ -1518,20 +1519,23 @@ const Mutation = {
       throw error;
     }
 
-    const expenseObj = new Expense({
+    const otherExpense = new OtherExpense({
       amount: expense,
       description: description,
       date: new Date(),
       tracks: [],
     });
 
-    await expenseObj.save();
+    await otherExpense.save();
 
-    const log = new Log({ kind: "Expense", item: expenseObj });
+    const log = new Log({ kind: "OtherExpense", item: otherExpense });
     await log.save();
 
     society.logs.push(log);
-    society.expenses ? (society.expenses += expense) : (society.expenses = expense);
+    society.expenses.other += expense;
+    society.balance.case -= expense;
+    society.total.assets -= expense;
+
     await society.save();
 
     log.fee = log.item;
@@ -1582,6 +1586,59 @@ const Mutation = {
 
     society.logs.push(log);
     society.expenses.administrative += expense;
+    society.balance.case -= expense;
+    society.total.assets -= expense;
+
+    await society.save();
+
+    log.fee = log.item;
+
+    return log;
+  },
+
+  onAddEventExpense: async (
+    parent,
+    { expenseInput: { expense, description } },
+    { pubSub, request },
+    info
+  ) => {
+    console.log({ emitted: "onAddEventExpense" });
+
+    const userData = getUserData(request);
+
+    if (!userData) {
+      const error = new Error("not authenticated!");
+      error.code = 401;
+      throw error;
+    }
+
+    if (userData.category !== "society") {
+      const error = new Error("only society can edit payments!");
+      error.code = 401;
+      throw error;
+    }
+
+    const society = await Society.findById(userData.encryptedId);
+    if (!society) {
+      const error = new Error("society doesn't exist!");
+      error.code = 403;
+      throw error;
+    }
+
+    const eventExpense = new EventExpense({
+      amount: expense,
+      description: description,
+      date: new Date(),
+      tracks: [],
+    });
+
+    await eventExpense.save();
+
+    const log = new Log({ kind: "EventExpense", item: eventExpense });
+    await log.save();
+
+    society.logs.push(log);
+    society.expenses.event += expense;
     society.balance.case -= expense;
     society.total.assets -= expense;
 

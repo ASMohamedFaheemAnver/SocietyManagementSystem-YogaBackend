@@ -59,6 +59,16 @@ const societySchema = new Schema(
         default: 0,
         required: true,
       },
+      event: {
+        type: Number,
+        default: 0,
+        required: true,
+      },
+      other: {
+        type: Number,
+        default: 0,
+        required: true,
+      },
     },
     total: {
       assets: {
