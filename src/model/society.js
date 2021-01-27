@@ -54,14 +54,11 @@ const societySchema = new Schema(
       default: 0,
     },
     expenses: {
-      type: Number,
-      default: 0,
-      required: true,
-    },
-    total_assets: {
-      type: Number,
-      default: 0,
-      required: true,
+      administrative: {
+        type: Number,
+        default: 0,
+        required: true,
+      },
     },
     total: {
       assets: {
