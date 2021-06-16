@@ -12,7 +12,10 @@
 #Detect an unsubscribe in Apollo graphql server
 #https://stackoverflow.com/questions/56886412/detect-an-unsubscribe-in-apollo-graphql-server
 
-// Filtering subscriptions withFilter
-// https://stackoverflow.com/questions/57714995/prisma2-subscriptions-returns-data-null
-// https://www.youtube.com/watch?v=wR76VDYW6DY
-// https://github.com/apollographql/graphql-subscriptions/issues/161
+# Filtering subscriptions withFilter
+# https://stackoverflow.com/questions/57714995/prisma2-subscriptions-returns-data-null
+# https://www.youtube.com/watch?v=wR76VDYW6DY
+# https://github.com/apollographql/graphql-subscriptions/issues/161
+
+# How to remove file from Git history?
+# https://stackoverflow.com/questions/43762338/how-to-remove-file-from-git-history
