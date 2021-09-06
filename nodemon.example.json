@@ -2,6 +2,7 @@
   "env": {
     "mongodb_url": "",
     "mongodb_urld": "",
-    "secret_word": ""
+    "secret_word": "",
+    "SENDGRID_API_KEY": ""
   }
 }

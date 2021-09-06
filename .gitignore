@@ -2,3 +2,4 @@
 images
 nodemon.json
 dist
+serviceAccountKey.json
