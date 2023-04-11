@@ -19,3 +19,5 @@
 
 # How to remove file from Git history?
 # https://stackoverflow.com/questions/43762338/how-to-remove-file-from-git-history
+
+# Node version 10.x.x

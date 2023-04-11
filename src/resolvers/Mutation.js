@@ -74,7 +74,12 @@ const Mutation = {
     return { message: "disapproved successfly!" };
   },
 
-  createSociety: async (parent, { societyInput }, { request, pubSub }, info) => {
+  createSociety: async (
+    parent,
+    { societyInput },
+    { request, pubSub },
+    info
+  ) => {
     console.log({ emitted: "createSociety" });
 
     const image = await societyInput.image;
@@ -136,7 +141,10 @@ const Mutation = {
       throw error;
     }
 
-    societyInput.imageUrl = await cloudFile.uploadImageToCloud(image, "society");
+    societyInput.imageUrl = await cloudFile.uploadImageToCloud(
+      image,
+      "society"
+    );
     if (!societyInput.imageUrl) {
       const error = new Error("cannot upload your image!");
       error.data = errors;
@@ -174,7 +182,12 @@ const Mutation = {
     return createdSociety._doc;
   },
 
-  updateSocietyProfile: async (parent, { societyProfileInput }, { request, pubSub }, info) => {
+  updateSocietyProfile: async (
+    parent,
+    { societyProfileInput },
+    { request, pubSub },
+    info
+  ) => {
     console.log({ emitted: "updateSocietyProfile" });
 
     const userData = getUserData(request);
@@ -227,7 +240,10 @@ const Mutation = {
     }
 
     if (image !== "undefined") {
-      societyProfileInput.imageUrl = await cloudFile.uploadImageToCloud(image, "society");
+      societyProfileInput.imageUrl = await cloudFile.uploadImageToCloud(
+        image,
+        "society"
+      );
     }
 
     const society = await Society.findById(userData.encryptedId);
@@ -251,7 +267,12 @@ const Mutation = {
     return { message: "society profile updated!" };
   },
 
-  updateMemberProfile: async (parent, { memberProfileInput }, { request, pubSub }, info) => {
+  updateMemberProfile: async (
+    parent,
+    { memberProfileInput },
+    { request, pubSub },
+    info
+  ) => {
     console.log({ emitted: "updateMemberProfile" });
 
     const userData = getUserData(request);
@@ -298,7 +319,10 @@ const Mutation = {
     }
 
     if (image !== "undefined") {
-      memberProfileInput.imageUrl = await cloudFile.uploadImageToCloud(image, "society");
+      memberProfileInput.imageUrl = await cloudFile.uploadImageToCloud(
+        image,
+        "society"
+      );
     }
 
     const member = await Member.findById(userData.encryptedId);
@@ -322,9 +346,12 @@ const Mutation = {
       listenSocietyMembers: { member: member, type: "PUT" },
     });
 
-    pubSub.publish(`society:member|society(${member.society}):member(${member._id})`, {
-      listenMemberById: { member: member, type: "PUT" },
-    });
+    pubSub.publish(
+      `society:member|society(${member.society}):member(${member._id})`,
+      {
+        listenMemberById: { member: member, type: "PUT" },
+      }
+    );
 
     return { message: "member profile updated!" };
   },
@@ -522,7 +549,12 @@ const Mutation = {
     return log;
   },
 
-  addExtraFeeToEveryone: async (parent, { extraFee, description }, { request, pubSub }, info) => {
+  addExtraFeeToEveryone: async (
+    parent,
+    { extraFee, description },
+    { request, pubSub },
+    info
+  ) => {
     console.log({ emitted: "addExtraFeeToEveryone" });
 
     const userData = getUserData(request);
@@ -654,7 +686,10 @@ const Mutation = {
       description: description,
     });
 
-    const log = new Log({ kind: "EntertainmentExpense", item: entertainmentExpense });
+    const log = new Log({
+      kind: "EntertainmentExpense",
+      item: entertainmentExpense,
+    });
     await log.save();
 
     for (let i = 0; i < society.members.length; i++) {
@@ -780,7 +815,12 @@ const Mutation = {
     return log;
   },
 
-  makeFeePaidForOneMember: async (parent, { track_id, log_id }, { request, pubSub }, info) => {
+  makeFeePaidForOneMember: async (
+    parent,
+    { track_id, log_id },
+    { request, pubSub },
+    info
+  ) => {
     console.log({ emitted: "makeFeePaidForOneMember" });
 
     const userData = getUserData(request);
@@ -848,9 +888,12 @@ const Mutation = {
 
     log.fee = log.item;
     log.fee.tracks[0] = track;
-    pubSub.publish(`member:log:track|society(${society._id})&member(${member._id})`, {
-      listenMemberLogTrack: { log: log, type: "PUT" },
-    });
+    pubSub.publish(
+      `member:log:track|society(${society._id})&member(${member._id})`,
+      {
+        listenMemberLogTrack: { log: log, type: "PUT" },
+      }
+    );
     pubSub.publish(`member:members|society(${society._id})`, {
       listenSocietyMembers: { member: member, type: "PUT" },
     });
@@ -858,7 +901,12 @@ const Mutation = {
     return { message: "member paid the ammount!" };
   },
 
-  makeFeeUnPaidForOneMember: async (parent, { track_id, log_id }, { request, pubSub }, info) => {
+  makeFeeUnPaidForOneMember: async (
+    parent,
+    { track_id, log_id },
+    { request, pubSub },
+    info
+  ) => {
     console.log({ emitted: "makeFeeUnPaidForOneMember" });
 
     const userData = getUserData(request);
@@ -925,9 +973,12 @@ const Mutation = {
 
     log.fee = log.item;
     log.fee.tracks[0] = track;
-    pubSub.publish(`member:log:track|society(${society._id})&member(${member._id})`, {
-      listenMemberLogTrack: { log: log, type: "PUT" },
-    });
+    pubSub.publish(
+      `member:log:track|society(${society._id})&member(${member._id})`,
+      {
+        listenMemberLogTrack: { log: log, type: "PUT" },
+      }
+    );
     pubSub.publish(`member:members|society(${society._id})`, {
       listenSocietyMembers: { member: member, type: "PUT" },
     });
@@ -991,7 +1042,12 @@ const Mutation = {
     return { message: "approved successfly!" };
   },
 
-  editFeeForEveryone: async (parent, { log_id, fee, description }, { request, pubSub }, info) => {
+  editFeeForEveryone: async (
+    parent,
+    { log_id, fee, description },
+    { request, pubSub },
+    info
+  ) => {
     console.log({ emitted: "editFeeForEveryone" });
     const userData = getUserData(request);
 
@@ -1029,7 +1085,11 @@ const Mutation = {
     let is_fee_mutated = false;
 
     const society = await Society.findById(userData.encryptedId);
-    if (log.item.amount !== fee && log.kind !== "Donation" && log.kind !== "Expense") {
+    if (
+      log.item.amount !== fee &&
+      log.kind !== "Donation" &&
+      log.kind !== "Expense"
+    ) {
       for (let i = 0; i < log.item.tracks.length; i++) {
         let track = log.item.tracks[i];
 
@@ -1087,16 +1147,34 @@ const Mutation = {
     log.fee = log.item;
     if (log.kind === "MonthFee" || log.kind === "ExtraFee") {
       pubSub.publish(`member:log|society(${society._id})`, {
-        listenCommonMemberLog: { log: log, type: "PUT", is_fee_mutated: is_fee_mutated },
+        listenCommonMemberLog: {
+          log: log,
+          type: "PUT",
+          is_fee_mutated: is_fee_mutated,
+        },
       });
     } else if (log.kind === "Fine" || log.kind === "RefinementFee") {
-      pubSub.publish(`member:log:(fine|refinement)|member(${log.item.tracks[0].member._id})`, {
-        listenMemberFineOrRefinementLog: { log: log, type: "PUT", is_fee_mutated: is_fee_mutated },
-      });
+      pubSub.publish(
+        `member:log:(fine|refinement)|member(${log.item.tracks[0].member._id})`,
+        {
+          listenMemberFineOrRefinementLog: {
+            log: log,
+            type: "PUT",
+            is_fee_mutated: is_fee_mutated,
+          },
+        }
+      );
     } else if (log.kind === "Donation" && log.item.tracks.length) {
-      pubSub.publish(`member:log:donation|member(${log.item.tracks[0].member._id})`, {
-        listenMemberDonationLog: { log: log, type: "PUT", is_fee_mutated: is_fee_mutated },
-      });
+      pubSub.publish(
+        `member:log:donation|member(${log.item.tracks[0].member._id})`,
+        {
+          listenMemberDonationLog: {
+            log: log,
+            type: "PUT",
+            is_fee_mutated: is_fee_mutated,
+          },
+        }
+      );
     }
     return log;
   },
@@ -1121,7 +1199,10 @@ const Mutation = {
       {
         path: "logs",
         match: { _id: log_id },
-        populate: { path: "item", populate: { path: "tracks", populate: { path: "member" } } },
+        populate: {
+          path: "item",
+          populate: { path: "tracks", populate: { path: "member" } },
+        },
       },
     ]);
 
@@ -1157,7 +1238,10 @@ const Mutation = {
         } else if (society.logs[0].kind === "Donation") {
           member = await Member.findOneAndUpdate(
             { _id: track.member._id },
-            { $inc: { donations: -society.logs[0].item.amount }, $pull: { logs: log_id } },
+            {
+              $inc: { donations: -society.logs[0].item.amount },
+              $pull: { logs: log_id },
+            },
             { new: true }
           );
 
@@ -1192,23 +1276,38 @@ const Mutation = {
 
     await Log.findByIdAndUpdate(log_id, { is_removed: true });
 
-    if (society.logs[0].kind === "MonthFee" || society.logs[0].kind === "ExtraFee") {
+    if (
+      society.logs[0].kind === "MonthFee" ||
+      society.logs[0].kind === "ExtraFee"
+    ) {
       pubSub.publish(`member:log|society(${society._id})`, {
         listenCommonMemberLog: { log: society.logs[0], type: "DELETE" },
       });
-    } else if (society.logs[0].kind === "Fine" || society.logs[0].kind === "RefinementFee") {
+    } else if (
+      society.logs[0].kind === "Fine" ||
+      society.logs[0].kind === "RefinementFee"
+    ) {
       if (society.logs[0].item.tracks[0]) {
         pubSub.publish(
           `member:log:(fine|refinement)|member(${society.logs[0].item.tracks[0].member._id})`,
           {
-            listenMemberFineOrRefinementLog: { log: society.logs[0], type: "DELETE" },
+            listenMemberFineOrRefinementLog: {
+              log: society.logs[0],
+              type: "DELETE",
+            },
           }
         );
       }
-    } else if (society.logs[0].kind === "Donation" && society.logs[0].item.tracks.length) {
-      pubSub.publish(`member:log:donation|member(${society.logs[0].item.tracks[0].member._id})`, {
-        listenMemberDonationLog: { log: society.logs[0], type: "DELETE" },
-      });
+    } else if (
+      society.logs[0].kind === "Donation" &&
+      society.logs[0].item.tracks.length
+    ) {
+      pubSub.publish(
+        `member:log:donation|member(${society.logs[0].item.tracks[0].member._id})`,
+        {
+          listenMemberDonationLog: { log: society.logs[0], type: "DELETE" },
+        }
+      );
     }
 
     return { message: "log removed!" };
@@ -1601,11 +1700,15 @@ const Mutation = {
     await log.save();
 
     society.logs.push(log);
-    society.donations ? (society.donations += donation) : (society.donations = donation);
+    society.donations
+      ? (society.donations += donation)
+      : (society.donations = donation);
     await society.save();
 
     member.logs.push(log);
-    member.donations ? (member.donations += donation) : (member.donations = donation);
+    member.donations
+      ? (member.donations += donation)
+      : (member.donations = donation);
     await member.save();
 
     log.fee = log.item;
@@ -1762,7 +1865,10 @@ const Mutation = {
 
     await administrativeExpense.save();
 
-    const log = new Log({ kind: "AdministrativeExpense", item: administrativeExpense });
+    const log = new Log({
+      kind: "AdministrativeExpense",
+      item: administrativeExpense,
+    });
     await log.save();
 
     society.logs.push(log);
@@ -1830,7 +1936,12 @@ const Mutation = {
     return log;
   },
 
-  removeSocietyMember: async (parent, { member_id }, { request, pubSub }, info) => {
+  removeSocietyMember: async (
+    parent,
+    { member_id },
+    { request, pubSub },
+    info
+  ) => {
     console.log({ emitted: "removeSocietyMember" });
 
     const userData = getUserData(request);
@@ -1895,7 +2006,12 @@ const Mutation = {
     return { message: "member removed successfly!" };
   },
 
-  deleteSocietyMember: async (parent, { member_id }, { request, pubSub }, info) => {
+  deleteSocietyMember: async (
+    parent,
+    { member_id },
+    { request, pubSub },
+    info
+  ) => {
     console.log({ emitted: "deleteSocietyMember" });
 
     const userData = getUserData(request);
@@ -1947,7 +2063,12 @@ const Mutation = {
     return { message: "member removed successfly!" };
   },
 
-  requestMemberPasswordReset: async (parent, { email }, { request, pubSub }, info) => {
+  requestMemberPasswordReset: async (
+    parent,
+    { email },
+    { request, pubSub },
+    info
+  ) => {
     if (!validator.isEmail(email)) {
       const error = new Error("please check the email!");
       error.code = 401;
@@ -2000,7 +2121,12 @@ const Mutation = {
     return { message: "password reset mail was send!" };
   },
 
-  memberPasswordReset: async (parent, { password, token }, { request, pubSub }, info) => {
+  memberPasswordReset: async (
+    parent,
+    { password, token },
+    { request, pubSub },
+    info
+  ) => {
     const member = await Member.findOne({
       reset_token: token,
       reset_token_expiration: { $gt: Date.now() },
@@ -2021,7 +2147,12 @@ const Mutation = {
     return { message: "password was reset successfully!" };
   },
 
-  requestSocietyPasswordReset: async (parent, { email }, { request, pubSub }, info) => {
+  requestSocietyPasswordReset: async (
+    parent,
+    { email },
+    { request, pubSub },
+    info
+  ) => {
     if (!validator.isEmail(email)) {
       const error = new Error("please check the email!");
       error.code = 401;
@@ -2074,7 +2205,12 @@ const Mutation = {
     return { message: "password reset mail was send!" };
   },
 
-  societyPasswordReset: async (parent, { password, token }, { request, pubSub }, info) => {
+  societyPasswordReset: async (
+    parent,
+    { password, token },
+    { request, pubSub },
+    info
+  ) => {
     const society = await Society.findOne({
       reset_token: token,
       reset_token_expiration: { $gt: Date.now() },

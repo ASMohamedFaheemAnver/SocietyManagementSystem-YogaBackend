@@ -5,7 +5,7 @@ const localFile = require("../util/local-file");
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  storageBucket: "gs://society-management-syste-6584a.appspot.com/",
+  storageBucket: "gs://codersauthoritystudy.appspot.com/",
 });
 
 const metadata = {
@@ -18,8 +18,7 @@ const metadata = {
 
 const bucket = admin.storage().bucket();
 
-const bucketUrl = `https://storage.googleapis.com/${bucket.name}/`;
-
+const bucketUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/`;
 const uploadImageToCloud = async (image, category) => {
   let path;
   try {
@@ -34,7 +33,9 @@ const uploadImageToCloud = async (image, category) => {
     return false;
   }
 
-  const imageUrl = bucketUrl + `${category}/${path.filePath}`;
+  const imageUrl =
+    bucketUrl +
+    `${encodeURIComponent(`${category}/${path.filePath}`)}?alt=media`;
 
   // console.log({ imageUrl: imageUrl });
   return imageUrl;
