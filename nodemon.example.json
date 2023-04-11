@@ -1,7 +1,7 @@
 {
   "env": {
+    "client_auth_link": "http://localhost/auth/login",
     "mongodb_url": "",
-    "mongodb_urld": "",
     "secret_word": "",
     "SENDGRID_API_KEY": ""
   }
